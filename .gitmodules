@@ -1,2 +1,3 @@
-[submodule "extension/ozz"]
+[submodule "extension/ozz-animation"]
+	path = extension/ozz
 	url = https://github.com/guillaumeblanc/ozz-animation
