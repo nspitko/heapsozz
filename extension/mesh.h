@@ -118,7 +118,6 @@ struct Mesh {
 
 
   // Buffer management
-  varray* get_buffer();
   varray* get_indices();
   vbyte* getRawBuffer();
 

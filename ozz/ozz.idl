@@ -48,7 +48,6 @@ interface Mesh {
 	// Parts
 	int parts_count();
 
-	float[] get_buffer();
 	uint[] get_indices();
 
 	bytes getRawBuffer();

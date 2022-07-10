@@ -302,8 +302,6 @@ inline static void _idc_copy_array( varray *dst, double *src,  int count) {
 #include "ozz/base/memory/unique_ptr.h"
 #include "ozz/base/containers/vector.h"
 
-
-#include "utils.h"
 #include "mesh.h"
 #include "skeleton.h"
 #include "animation.h"
@@ -469,11 +467,6 @@ HL_PRIM int HL_NAME(Mesh_parts_count0)(_ref(Mesh)* _this) {
 	return (_unref(_this)->parts_count());
 }
 DEFINE_PRIM(_I32, Mesh_parts_count0, _IDL);
-
-HL_PRIM varray* HL_NAME(Mesh_get_buffer0)(_ref(Mesh)* _this) {
-	return (_unref(_this)->get_buffer());
-}
-DEFINE_PRIM(_ARR, Mesh_get_buffer0, _IDL);
 
 HL_PRIM varray* HL_NAME(Mesh_get_indices0)(_ref(Mesh)* _this) {
 	return (_unref(_this)->get_indices());

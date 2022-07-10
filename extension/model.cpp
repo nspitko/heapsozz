@@ -164,24 +164,6 @@ varray* Model::getSkinMatrices( int meshIndex)
 		farr[a++] = ozz::math::GetZ( c3 );
 		farr[a++] = ozz::math::GetW( c3 );
 
-		/*
-
-		farr[a++] = ozz::math::GetX( c0 );
-		farr[a++] = ozz::math::GetX( c1 );
-		farr[a++] = ozz::math::GetX( c2 );
-		farr[a++] = ozz::math::GetX( c3 );
-
-		farr[a++] = ozz::math::GetY( c0 );
-		farr[a++] = ozz::math::GetY( c1 );
-		farr[a++] = ozz::math::GetY( c2 );
-		farr[a++] = ozz::math::GetY( c3 );
-
-		farr[a++] = ozz::math::GetZ( c0 );
-		farr[a++] = ozz::math::GetZ( c1 );
-		farr[a++] = ozz::math::GetZ( c2 );
-		farr[a++] = ozz::math::GetZ( c3 );
-		*/
-
 	}
 
 	return arr;

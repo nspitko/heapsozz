@@ -66,8 +66,4 @@ struct Mesh;
 varray *span_of_const_char_const_to_varray( ozz::span<const char* const> input );
 vbyte* const_char_to_vbytes(const char* str);
 
-// Float4x4
-varray *float4x4_get( ozz::math::Float4x4 *mat );
-
-
 void samplingjob_set_animation( ozz::animation::SamplingJob *job, ozz::animation::Animation *anim);
