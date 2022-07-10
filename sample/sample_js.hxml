@@ -1,0 +1,7 @@
+-lib heaps
+-lib webidl
+-cp sample/
+-main Main
+-js sample.js
+-dce full
+

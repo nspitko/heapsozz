@@ -1,0 +1,7 @@
+-lib heaps
+-lib hldx
+-lib webidl
+-cp sample/
+-main Main
+-hl sample.hl
+

@@ -1,0 +1,10 @@
+{
+	"name" : "heapsozz",
+	"url" : "https://github.com/nspitko/heapsozz",
+	"license" : "BSD",
+	"contributors" : ["nspitko"],
+	"description" : "ozz-animation support for Heaps",
+	"version" : "0.0.1",
+	"releasenote" : "",
+	"dependencies": { "webidl" : "" }
+}
