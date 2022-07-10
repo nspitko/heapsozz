@@ -1,5 +1,6 @@
 package ozz;
 
+import haxe.io.Path;
 import sys.FileSystem;
 #if eval
 class Generator {
@@ -30,8 +31,6 @@ class Generator {
 #include "ozz/base/memory/unique_ptr.h"
 #include "ozz/base/containers/vector.h"
 
-
-#include "utils.h"
 #include "mesh.h"
 #include "skeleton.h"
 #include "animation.h"
@@ -39,39 +38,66 @@ class Generator {
 
 ';
 
-	static var options = { idlFile : "ozz/ozz.idl", nativeLib : "ozz", outputDir : "extension/", includeCode : INCLUDE, autoGC : true };
+	static var options = { idlFile : "ozz/ozz.idl", nativeLib : "ozz", outputDir : "build", includeCode : INCLUDE, autoGC : true };
 
 	public static function generateCpp() {
 		webidl.Generate.generateCpp(options);
 	}
 
-	static function recursiveFiles( path: String )
+	static function recursiveFiles( path: String, extension: String )
 	{
 		var out = [];
 		var files = FileSystem.readDirectory(path);
 		for( f in files )
 		{
 			if(  FileSystem.isDirectory( f ) )
-				out = out.concat( recursiveFiles( f ) );
+				out = out.concat( recursiveFiles( f, extension ) );
 			else
 			{
-				if( StringTools.endsWith(f,".cc") )
-					out.push( f );
+				if( StringTools.endsWith(f,extension) )
+					out.push( '$path$f' );
 			}
 		}
 		return out;
 	}
 
-	public static function getFiles() {
+	static var cwd: String;
+	static function relPath(path:String):String
+	{
+		if( cwd == null )
+		{
+			// Find the cwd... it's null on macro for some reason so lets find it the hard way
+			var p = Path.directory(path);
+			while( p.length > 2 && !FileSystem.exists( Path.join([p, "ozz.hdll.vcxproj.filters"]) ) )
+			{
+				var pa = p.split("/");
+				pa.pop();
+				p = pa.join("/");
+			}
+			cwd = p;
+		}
+		return StringTools.replace(path,'$cwd/',"");
+    }
 
-		return recursiveFiles("extension/ozz");
+
+
+	public static function getFiles() {
+		var prj = new haxe.xml.Access(Xml.parse(sys.io.File.getContent("ozz.hdll.vcxproj.filters")).firstElement());
+		var sources = [];
+		for( i in prj.elements )
+			if( i.name == "ItemGroup" )
+				for( f in i.elements ) {
+					if( f.name != "ClCompile" ) continue;
+					var fname = f.att.Include.split("\\").join("/");
+					sources.push( relPath( fname ) );
+				}
+		return sources;
 	}
 
 	public static function generateJs() {
-		// ammo.js params
-		var debug = false;
-		var defines = debug ? [] : ["NO_EXIT_RUNTIME=1", "NO_FILESYSTEM=1", "AGGRESSIVE_VARIABLE_ELIMINATION=1", "ELIMINATE_DUPLICATE_FUNCTIONS=1", "NO_DYNAMIC_EXECUTION=1"];
-		var params = ["-O"+(debug?0:3), "--llvm-lto", "1", "-I", "../../include/bullet/src"];
+		var debug = true;
+		var defines = debug ? [] : ["EMCC_DEBUG=1", "NO_FILESYSTEM=1", "AGGRESSIVE_VARIABLE_ELIMINATION=1", "ELIMINATE_DUPLICATE_FUNCTIONS=1", "NO_DYNAMIC_EXECUTION=1"];
+		var params = ["-O"+(debug?0:3),"-I", "extension/ozz/include/","-I", "extension/ozz/src/", "-I", "c:\\haxetoolkit\\hl\\include"];
 		for( d in defines ) {
 			params.push("-s");
 			params.push(d);

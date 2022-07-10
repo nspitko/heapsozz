@@ -1,10 +1,10 @@
-#include <hl.h>
 
 #include "ozz/base/containers/vector.h"
 #include "ozz/base/io/archive_traits.h"
 #include "ozz/base/span.h"
 #include "ozz/base/maths/soa_float4x4.h"
 
+#include "utils.h"
 
 
 #ifndef EXTENSION_MESH_H

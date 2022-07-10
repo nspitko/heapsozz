@@ -19,3 +19,7 @@ ozz.hdll.dir
 .vscode
 build.bat
 CMakeCache.txt
+*.bc
+buildjs.bat
+*.tmp
+build
