@@ -31,8 +31,31 @@ int skeleton_num_joint_names( ozz::animation::Skeleton *skeleton )
 {
 	return static_cast<int>( skeleton->joint_names().size() );
 }
-
+#ifndef EMSCRIPTEN
 vbyte *skeleton_get_joint_name(ozz::animation::Skeleton *skeleton, int idx)
 {
 	return const_char_to_vbytes( skeleton->joint_names()[idx] );
 }
+#endif
+
+
+#ifdef EMSCRIPTEN
+
+using namespace emscripten;
+
+
+EMSCRIPTEN_BINDINGS(ozzSkeleton) {
+	class_<ozz::animation::Skeleton>("Skeleton")
+		.constructor<>()
+
+		.property("num_joints", &ozz::animation::Skeleton::num_joints)
+		.property("num_soa_joints", &ozz::animation::Skeleton::num_soa_joints)
+		.property("joint_parents", &ozz::animation::Skeleton::joint_parents)
+		//.property("joint_names", &Mesh::joint_names)
+
+		//.function("load", &Mesh::load)
+		//.class_property("name", &animation_get_name)
+    ;
+}
+
+#endif

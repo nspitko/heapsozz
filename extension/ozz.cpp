@@ -1,3 +1,5 @@
+#ifndef EMSCRIPTEN
+
 #ifdef EMSCRIPTEN
 
 #include <emscripten.h>
@@ -51,66 +53,7 @@ template<typename T> void free_ref( pref<T> *r, void (*deleteFunc)(T*) ) {
 	r->finalize = NULL;
 }
 
-// Float vector
-struct _hl_float2 {
-	float x;
-	float y;
-};
 
-struct _hl_float3 {
-	float x;
-	float y;
-	float z;
-};
-
-struct _hl_float4 {
-	float x;
-	float y;
-	float z;
-	float w;
-};
-
-// int vector
-struct _hl_int2 {
-	int x;
-	int y;
-};
-
-struct _hl_int3 {
-	int x;
-	int y;
-	int z;
-};
-
-struct _hl_int4 {
-	int x;
-	int y;
-	int z;
-	int w;
-};
-
-// double vector
-struct _hl_double2 {
-	double x;
-	double y;
-};
-
-struct _hl_double3 {
-	double x;
-	double y;
-	double z;
-};
-
-struct _hl_double4 {
-	double x;
-	double y;
-	double z;
-	double w;
-};
-
-inline void testvector(_hl_float3 *v) {
-  printf("v: %f %f %f\n", v->x, v->y, v->z);
-}
 template<typename T> pref<T> *_alloc_ref( T *value, void (*finalize)( pref<T> * ) ) {
 	if (value == nullptr) return nullptr;
 	pref<T> *r = (pref<T>*)hl_gc_alloc_finalizer(sizeof(pref<T>));
@@ -313,6 +256,8 @@ inline static void _idc_copy_array( varray *dst, double *src,  int count) {
 
 extern "C" {
 
+// @todo: Below here; generated via webIDL. Clean this up.
+
 static void finalize_SamplingJob( _ref(ozz::animation::SamplingJob)* _this ) { free_ref(_this ); }
 HL_PRIM void HL_NAME(SamplingJob_delete)( _ref(ozz::animation::SamplingJob)* _this ) {
 	free_ref(_this );
@@ -513,9 +458,16 @@ HL_PRIM _ref(ozz::animation::Animation)* HL_NAME(Animation_new0)() {
 }
 DEFINE_PRIM(_IDL, Animation_new0,);
 
+#ifdef EMSCRIPTEN
+HL_PRIM void HL_NAME(Animation_load2)(_ref(ozz::animation::Animation)* _this, std::string data, int length) {
+	(load_animation( _unref(_this) , data, length));
+}
+#else
 HL_PRIM void HL_NAME(Animation_load2)(_ref(ozz::animation::Animation)* _this, vbyte* data, int length) {
 	(load_animation( _unref(_this) , data, length));
 }
+
+#endif
 DEFINE_PRIM(_VOID, Animation_load2, _IDL _BYTES _I32);
 
 HL_PRIM int HL_NAME(Animation_trackCount0)(_ref(ozz::animation::Animation)* _this) {
@@ -574,3 +526,6 @@ HL_PRIM HL_CONST _ref(ozz::animation::Skeleton)* HL_NAME(Model_getSkeleton0)(_re
 DEFINE_PRIM(_IDL, Model_getSkeleton0, _IDL);
 
 }
+
+
+#endif

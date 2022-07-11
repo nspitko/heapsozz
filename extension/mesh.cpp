@@ -1,4 +1,3 @@
-#include <hl.h>
 #include "utils.h"
 #include "mesh.h"
 #include "ozz/base/containers/vector_archive.h"
@@ -8,14 +7,16 @@
 #include "ozz/base/maths/math_archive.h"
 #include "ozz/base/maths/simd_math_archive.h"
 
-
-inline void writeFloat( vbyte *dst, float src )
+inline void writeFloat( char *dst, float src )
 {
 	for(int i = 0; i < 4; i++)
 		dst[i] = ((char*)&src)[i];
 }
-
+#ifdef EMSCRIPTEN
+emscripten::val Mesh::getVertexBuffer( )
+#else
 vbyte* Mesh::getRawBuffer( )
+#endif
 {
 	// @todo we should just pass the buffer in from haxe and write straight to it.
 
@@ -34,7 +35,16 @@ vbyte* Mesh::getRawBuffer( )
 					fWidth * 3 + // weight
 					byteWidth * 4; // idx
 
+#ifdef EMSCRIPTEN
+	if( m_pVertexBuffer == nullptr )
+		m_unVertexBufferSize = sizeof(char) * ( stride * count );
+
+	m_pVertexBuffer = (char *)malloc( m_unVertexBufferSize );
+	char* buff = m_pVertexBuffer;
+#else
 	vbyte* buff = hl_alloc_bytes( stride * count );
+#endif
+
 
 	int idx = 0;
 
@@ -114,7 +124,11 @@ vbyte* Mesh::getRawBuffer( )
 		}
 	}
 
+#ifdef EMSCRIPTEN
+	return emscripten::val(emscripten::typed_memory_view(m_unVertexBufferSize, m_pVertexBuffer));
+#else
 	return buff;
+#endif
 
 }
 
@@ -141,13 +155,29 @@ bool Mesh::load(vbyte* data, int len)
 
 	return true;
 }
-
-varray* Mesh::get_indices( )
+#ifdef EMSCRIPTEN
+emscripten::val Mesh::getIndices( )
+#else
+vbyte* Mesh::getIndices( )
+#endif
 {
+
 	int count = triangle_index_count();
 
 	printf("Writing index buffer for %d verts\n", count);
 
+#ifdef EMSCRIPTEN
+	if( m_pIndexBuffer == nullptr )
+		m_pIndexBuffer = (uint16_t *)malloc( count * sizeof( uint16_t ) );
+
+	for(int i=0; i<triangle_indices.size(); i++ )
+	{
+		m_pIndexBuffer[i] = triangle_indices[i];
+	}
+
+	return emscripten::val(emscripten::typed_memory_view(count, m_pIndexBuffer));
+
+#else
 	varray* buff = hl_alloc_array( &hlt_i32, count );
 	uint32_t *indices = hl_aptr(buff, uint32_t);
 	int idx = 0;
@@ -160,7 +190,12 @@ varray* Mesh::get_indices( )
 
 
 
+
 	return buff;
+#endif
+
+
+
 }
 
 
@@ -218,3 +253,31 @@ void ozz::io::Extern<Mesh>::Load(ozz::io::IArchive& _archive, Mesh* _meshes,
 		_archive >> mesh.inverse_bind_poses;
 	}
 }
+
+
+#ifdef EMSCRIPTEN
+
+using namespace emscripten;
+
+EMSCRIPTEN_BINDINGS(ozzMesh) {
+	class_<Mesh>("Mesh")
+		.constructor<>()
+
+		.function("getVertexBuffer", &Mesh::getVertexBuffer)
+		.function("getIndices", &Mesh::getIndices)
+
+		.property("triangle_index_count", &Mesh::triangle_index_count)
+		.property("vertex_count", &Mesh::vertex_count)
+		.property("max_influences_count", &Mesh::max_influences_count)
+		.property("skinned", &Mesh::skinned)
+		.property("num_joints", &Mesh::num_joints)
+		.property("highest_joint_index", &Mesh::highest_joint_index)
+		//.property("parts_count", &Mesh::parts_count)
+		//.property("parts", &Mesh::parts)
+		.property("triangle_indices", &Mesh::triangle_indices)
+		//.function("load", &Mesh::load)
+		//.class_property("name", &animation_get_name)
+    ;
+}
+
+#endif

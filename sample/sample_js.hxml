@@ -1,7 +1,6 @@
 -lib heaps
--lib webidl
 -cp sample/
 -main Main
--js sample.js
+-js sample/sample.js
 -dce full
-
+-debug

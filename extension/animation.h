@@ -1,4 +1,4 @@
-#include <hl.h>
+#include "utils.h"
 
 #include "ozz/base/containers/vector.h"
 #include "ozz/base/span.h"
@@ -9,4 +9,12 @@
 #include "ozz/animation/runtime/track.h"
 
 
+#ifdef EMSCRIPTEN
+bool animation_load(ozz::animation::Animation& animation, std::string data, int len);
+std::string animation_get_name(ozz::animation::Animation *animation);
+#else
 bool load_animation(ozz::animation::Animation *animation, vbyte* data, int len);
+#endif
+
+
+

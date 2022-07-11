@@ -32,15 +32,22 @@ struct Model
 	}
 
 
-	bool loadMeshes(vbyte* data, int len);
-	bool loadSkeleton(vbyte* data, int len);
-
+	bool loadMeshes(std::string data, int len);
+	bool loadSkeleton(std::string data, int len);
 	bool runSamplingJob( ozz::animation::SamplingJob *job );
 
-	// IDL accessors
+	#ifdef EMSCRIPTEN
+	float *m_pSkinMatrixBuffer = nullptr;
+
+	emscripten::val getSkinMatrices( int meshIndex );
+	std::vector<Mesh *> getMeshes();
+	#else
 	varray* getMeshes();
-	ozz::animation::Skeleton* getSkeleton() { return &skeleton; }
 	varray* getSkinMatrices( int meshIndex );
+	#endif
+
+	ozz::animation::Skeleton* getSkeleton() { return &skeleton; }
+
 
 	// Data
 	ozz::vector<Mesh> meshes;

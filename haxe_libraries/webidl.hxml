@@ -1,4 +1,2 @@
-# @install: lix --silent download "git:https://github.com/nspitko/hl-idl.git#8b5627c796365f4b43ae777563ced0ee76f7c43c" into webidl/2.8.0/git/8b5627c796365f4b43ae777563ced0ee76f7c43c
--lib format
--cp ${HAXE_LIBCACHE}/webidl/2.8.0/git/8b5627c796365f4b43ae777563ced0ee76f7c43c/
+-cp d:\work\hl-idl\
 -D webidl=2.8.0

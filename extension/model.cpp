@@ -1,7 +1,6 @@
 #include "model.h"
 #include "mesh.h"
 
-#include <hl.h>
 #include "utils.h"
 
 #include "ozz/base/containers/vector_archive.h"
@@ -13,7 +12,9 @@
 
 
 // Don't actually free the ref. (Yes this is dumb)
+#ifndef EMSCRIPTEN
 static void finalize_Mesh( _ref(Mesh)* _this ) {  }
+#endif
 
 bool Model::runSamplingJob( ozz::animation::SamplingJob *job )
 {
@@ -39,10 +40,10 @@ bool Model::runSamplingJob( ozz::animation::SamplingJob *job )
 
 
 // @todo: Currently we don't share skeletons/meshes between instances. This is pretty bad!
-bool Model::loadMeshes(vbyte* data, int len)
+bool Model::loadMeshes(std::string data, int len)
 {
 	ozz::io::MemoryStream ms;
-	ms.Write( data, len );
+	ms.Write( data.data(), len );
 	ms.Seek(0,ms.kSet);
 
 	ozz::io::IArchive archive(&ms);
@@ -75,10 +76,10 @@ bool Model::loadMeshes(vbyte* data, int len)
 
 
 
-bool Model::loadSkeleton(vbyte* data, int len)
+bool Model::loadSkeleton(std::string data, int len)
 {
 	ozz::io::MemoryStream ms;
-	ms.Write( data, len );
+	ms.Write( data.data(), len );
 	ms.Seek(0,ms.kSet);
 
 	ozz::io::IArchive archive(&ms);
@@ -103,22 +104,11 @@ bool Model::loadSkeleton(vbyte* data, int len)
 	return true;
 }
 
-
-varray* Model::getMeshes()
-{
-	varray *arr = hl_alloc_array(&hlt_abstract, meshes.size());
-	for( int i=0; i<meshes.size();i++)
-	{
-		hl_aptr(arr,_ref(Mesh)*)[i] = alloc_ref(&meshes.at(i), Mesh);
-
-
-	}
-
-
-	return arr;
-}
-
-varray* Model::getSkinMatrices( int meshIndex)
+#ifdef EMSCRIPTEN
+emscripten::val Model::getSkinMatrices( int meshIndex )
+#else
+varray* Model::getSkinMatrices( int meshIndex )
+#endif
 {
 	// First, apply skinning matrices (use joint remaps and multiply by inverse bind pose)
 	Mesh *mesh = &meshes[meshIndex];
@@ -127,9 +117,15 @@ varray* Model::getSkinMatrices( int meshIndex)
 
 
 	int size = numSkinJoints * (4*4);
-	varray *arr = hl_alloc_array(&hlt_f32, size );
+	#ifdef EMSCRIPTEN
+	if( m_pSkinMatrixBuffer == nullptr )
+		m_pSkinMatrixBuffer = (float *)malloc( sizeof(float) * size );
 
+	float* farr = m_pSkinMatrixBuffer;
+	#else
+	varray *arr = hl_alloc_array(&hlt_f32, size );
 	float* farr = hl_aptr(arr,float);
+	#endif
 
 	int a=0;
 
@@ -166,5 +162,70 @@ varray* Model::getSkinMatrices( int meshIndex)
 
 	}
 
+#ifdef EMSCRIPTEN
+	return emscripten::val(emscripten::typed_memory_view(size, m_pSkinMatrixBuffer));;
+#else
+	return arr;
+#endif
+}
+
+#ifndef EMSCRIPTEN
+varray* Model::getMeshes()
+{
+
+	varray *arr = hl_alloc_array(&hlt_abstract, meshes.size());
+	for( int i=0; i<meshes.size();i++)
+	{
+		hl_aptr(arr,_ref(Mesh)*)[i] = alloc_ref(&meshes.at(i), Mesh);
+
+
+	}
+
+
 	return arr;
 }
+#else
+std::vector<Mesh *> Model::getMeshes()
+{
+	std::vector<Mesh *> vec;
+	for( int i=0; i<meshes.size(); i++)
+		vec.push_back( &meshes[i]);
+
+
+	return vec;
+}
+
+#endif
+
+#ifdef EMSCRIPTEN
+
+using namespace emscripten;
+
+
+EMSCRIPTEN_BINDINGS(ozzModel) {
+
+	register_vector<Mesh *>("VectorMeshPtr");
+
+	class_<Model>("Model")
+		.constructor<>()
+		//
+		.function("loadMeshes", &Model::loadMeshes)
+		.function("loadSkeleton", &Model::loadSkeleton)
+		.function("getSkeleton", &Model::getSkeleton, allow_raw_pointers())
+		.function("getMeshes", &Model::getMeshes, allow_raw_pointers())
+		.function("getSkinMatrices", &Model::getSkinMatrices)
+		.function("runSamplingJob", &Model::runSamplingJob, allow_raw_pointers())
+		//
+		//.property("meshes")
+		//.field("meshes", &Model::meshes)
+		//.field("skeleton", &Model::skeleton, allow_raw_pointers())
+		//.field("localTransforms", &Model::localTransforms)
+		//.field("modelMatrices", &Model::modelMatrices)
+		//.field("skinningMatrices", &Model::skinningMatrices)
+
+
+		//.class_property("name", &animation_get_name)
+    ;
+}
+
+#endif

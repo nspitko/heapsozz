@@ -41,7 +41,21 @@ class OzzModel extends h3d.scene.Object {
 
 	function initialize()
 	{
+
+
+
+		#if js
+		var ozzMeshes = [];
+
+		var m =model.getMeshes();
+		trace('Found ${m.size()} meshes');
+		for( i in 0 ... m.size() )
+			ozzMeshes.push(m.get(i));
+		#else
 		var ozzMeshes = model.getMeshes();
+		#end
+
+
 
 
 		// @todo
@@ -64,7 +78,7 @@ class OzzModel extends h3d.scene.Object {
 		var maxBones: Int = 0;// model.getSkeleton().highestJointIndex();
 		for( i in 0 ... ozzMeshes.length )
 		{
-			maxBones = cast Math.max( maxBones, ozzMeshes[i].highestJointIndex() );
+			maxBones = cast Math.max( maxBones, ozzMeshes[i].highest_joint_index );
 		}
 
 		for( i in 0 ... maxBones )
@@ -100,7 +114,6 @@ class OzzModel extends h3d.scene.Object {
 
 
 
-
 	}
 
 	override function sync( ctx : RenderContext )
@@ -119,5 +132,6 @@ class OzzModel extends h3d.scene.Object {
 		if(animRatio > 1 )
 			animRatio = 0;
 	}
+
 
 }

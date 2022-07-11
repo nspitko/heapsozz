@@ -41,6 +41,7 @@ class OzzMesh extends MultiMaterial
 		if( ctx.drawPass.index == 0)
 		{
 			// @todo this sucks
+			var numMatrices = 0;
 			var skinMatrices = model.getSkinMatrices( meshIndex );
 
 			var idx = 0;
@@ -70,6 +71,8 @@ class OzzMesh extends MultiMaterial
 				matrix._44 = skinMatrices[idx++];
 
 			}
+
+
 
 			//trace('Applied ${midx} skin matrices this frame (of ${skinShader.bonesMatrixes.length} total matrices)');
 

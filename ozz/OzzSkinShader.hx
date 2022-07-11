@@ -14,9 +14,6 @@ class OzzSkinShader extends h3d.shader.SkinBase {
 
 		var transformedTangent : Vec4;
 
-		var isZero: Bool;
-		var isTooHigh: Bool;
-
 		var pixelColor : Vec4;
 
 		function vertex() {
@@ -37,14 +34,8 @@ class OzzSkinShader extends h3d.shader.SkinBase {
 
 			transformedNormal = normalize(transformedNormal);
 
-			isTooHigh = input.indexes.x > 60;
-			isZero = input.indexes.x == 0;
 		}
 
-		function fragment() {
-			if( isTooHigh ) pixelColor.r = 1;
-			if( isZero ) pixelColor.g = 1;
-		}
 
 	};
 
