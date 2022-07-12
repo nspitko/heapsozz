@@ -11,10 +11,6 @@
 #include "ozz/base/maths/simd_math_archive.h"
 
 
-// Don't actually free the ref. (Yes this is dumb)
-#ifndef EMSCRIPTEN
-static void finalize_Mesh( _ref(Mesh)* _this ) {  }
-#endif
 
 bool Model::runSamplingJob( ozz::animation::SamplingJob *job )
 {
@@ -37,13 +33,19 @@ bool Model::runSamplingJob( ozz::animation::SamplingJob *job )
 
 }
 
-
-
 // @todo: Currently we don't share skeletons/meshes between instances. This is pretty bad!
+#ifdef EMSCRIPTEN
 bool Model::loadMeshes(std::string data, int len)
+#else
+bool Model::loadMeshes(vbyte *data, int len)
+#endif
 {
 	ozz::io::MemoryStream ms;
+	#ifdef EMSCRIPTEN
 	ms.Write( data.data(), len );
+	#else
+	ms.Write( data, len );
+	#endif
 	ms.Seek(0,ms.kSet);
 
 	ozz::io::IArchive archive(&ms);
@@ -75,11 +77,19 @@ bool Model::loadMeshes(std::string data, int len)
 }
 
 
-
+#ifdef EMSCRIPTEN
 bool Model::loadSkeleton(std::string data, int len)
+#else
+bool Model::loadSkeleton(vbyte *data, int len)
+#endif
 {
 	ozz::io::MemoryStream ms;
+	#ifdef EMSCRIPTEN
 	ms.Write( data.data(), len );
+	#else
+	ms.Write( data, len );
+	#endif
+
 	ms.Seek(0,ms.kSet);
 
 	ozz::io::IArchive archive(&ms);
@@ -107,25 +117,20 @@ bool Model::loadSkeleton(std::string data, int len)
 #ifdef EMSCRIPTEN
 emscripten::val Model::getSkinMatrices( int meshIndex )
 #else
-varray* Model::getSkinMatrices( int meshIndex )
+vbyte* Model::getSkinMatrices( int meshIndex )
 #endif
 {
 	// First, apply skinning matrices (use joint remaps and multiply by inverse bind pose)
 	Mesh *mesh = &meshes[meshIndex];
 
-	int numSkinJoints = mesh->num_joints();
+	int numSkinJoints = mesh->joint_count();
 
 
 	int size = numSkinJoints * (4*4);
-	#ifdef EMSCRIPTEN
 	if( m_pSkinMatrixBuffer == nullptr )
 		m_pSkinMatrixBuffer = (float *)malloc( sizeof(float) * size );
 
 	float* farr = m_pSkinMatrixBuffer;
-	#else
-	varray *arr = hl_alloc_array(&hlt_f32, size );
-	float* farr = hl_aptr(arr,float);
-	#endif
 
 	int a=0;
 
@@ -139,6 +144,9 @@ varray* Model::getSkinMatrices( int meshIndex )
 
 		// @todo I don't think we need to send the full matrix? Can probably get away with
 		// 4x3 here if we initialize the target matrices properly.
+
+		// @todo would be nice if we could just copy these in one pass instead of four gets;
+		// maybe some assumptions we can do with the SIMD structures?
 
 		farr[a++] = ozz::math::GetX( c0 );
 		farr[a++] = ozz::math::GetY( c0 );
@@ -165,7 +173,7 @@ varray* Model::getSkinMatrices( int meshIndex )
 #ifdef EMSCRIPTEN
 	return emscripten::val(emscripten::typed_memory_view(size, m_pSkinMatrixBuffer));;
 #else
-	return arr;
+	return (vbyte*)m_pSkinMatrixBuffer;
 #endif
 }
 
@@ -173,14 +181,11 @@ varray* Model::getSkinMatrices( int meshIndex )
 varray* Model::getMeshes()
 {
 
-	varray *arr = hl_alloc_array(&hlt_abstract, meshes.size());
-	for( int i=0; i<meshes.size();i++)
+	varray *arr = hl_alloc_array(&hlt_abstract, (int)meshes.size());
+	for( size_t i=0; i<meshes.size();i++)
 	{
-		hl_aptr(arr,_ref(Mesh)*)[i] = alloc_ref(&meshes.at(i), Mesh);
-
-
+		hl_aptr(arr,Mesh*)[i] = &meshes.at(i);
 	}
-
 
 	return arr;
 }
@@ -209,11 +214,11 @@ EMSCRIPTEN_BINDINGS(ozzModel) {
 	class_<Model>("Model")
 		.constructor<>()
 		//
-		.function("loadMeshes", &Model::loadMeshes)
-		.function("loadSkeleton", &Model::loadSkeleton)
+		.function("loadMeshesImpl", &Model::loadMeshes)
+		.function("loadSkeletonImpl", &Model::loadSkeleton)
 		.function("getSkeleton", &Model::getSkeleton, allow_raw_pointers())
 		.function("getMeshes", &Model::getMeshes, allow_raw_pointers())
-		.function("getSkinMatrices", &Model::getSkinMatrices)
+		.function("getSkinMatricesImpl", &Model::getSkinMatrices)
 		.function("runSamplingJob", &Model::runSamplingJob, allow_raw_pointers())
 		//
 		//.property("meshes")
@@ -227,5 +232,44 @@ EMSCRIPTEN_BINDINGS(ozzModel) {
 		//.class_property("name", &animation_get_name)
     ;
 }
+#else
+
+HL_PRIM void HL_NAME(model_new)(Model* model)
+{
+	if (model != nullptr) new (model)Model(); else printf("Failed to init struct; ptr is null\n");
+}
+
+HL_PRIM bool HL_NAME(model_load_meshes)(Model* model, vbyte* data, int length) {
+	return model->loadMeshes(data, length);
+}
+
+HL_PRIM bool HL_NAME(model_load_skeleton)(Model* model, vbyte* data, int length) {
+	return model->loadSkeleton(data, length);
+}
+
+HL_PRIM ozz::animation::Skeleton* HL_NAME(model_get_skeleton)(Model* model ) {
+	return model->getSkeleton();
+}
+
+HL_PRIM varray* HL_NAME(model_get_meshes)(Model* model ) {
+	return model->getMeshes();
+}
+
+HL_PRIM vbyte* HL_NAME(model_get_skin_matrices)(Model* model, int meshIndex) {
+	return model->getSkinMatrices( meshIndex );
+}
+
+HL_PRIM bool HL_NAME(model_run_sampling_job)(Model* model, ozz::animation::SamplingJob* job) {
+	return model->runSamplingJob( job );
+}
+
+DEFINE_PRIM(_VOID, model_new, _STRUCT);
+DEFINE_PRIM(_BOOL, model_load_meshes, _STRUCT _BYTES _I32 );
+DEFINE_PRIM(_BOOL, model_load_skeleton, _STRUCT _BYTES _I32);
+DEFINE_PRIM(_STRUCT, model_get_skeleton, _STRUCT );
+DEFINE_PRIM(_ARR, model_get_meshes, _STRUCT );
+DEFINE_PRIM(_BYTES, model_get_skin_matrices, _STRUCT _I32 );
+DEFINE_PRIM(_BOOL, model_run_sampling_job, _STRUCT _STRUCT );
+
 
 #endif

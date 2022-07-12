@@ -28,22 +28,27 @@ struct Model
 {
 	Model( ) : context()
 	{
-
+		printf("Init\n");
 	}
 
 
-	bool loadMeshes(std::string data, int len);
-	bool loadSkeleton(std::string data, int len);
+
 	bool runSamplingJob( ozz::animation::SamplingJob *job );
 
-	#ifdef EMSCRIPTEN
 	float *m_pSkinMatrixBuffer = nullptr;
+
+	#ifdef EMSCRIPTEN
+	bool loadMeshes(std::string data, int len);
+	bool loadSkeleton(std::string data, int len);
 
 	emscripten::val getSkinMatrices( int meshIndex );
 	std::vector<Mesh *> getMeshes();
 	#else
+	bool loadMeshes(vbyte *data, int len);
+	bool loadSkeleton(vbyte *data, int len);
+
 	varray* getMeshes();
-	varray* getSkinMatrices( int meshIndex );
+	vbyte* getSkinMatrices( int meshIndex );
 	#endif
 
 	ozz::animation::Skeleton* getSkeleton() { return &skeleton; }

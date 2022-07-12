@@ -206,11 +206,11 @@ Main.prototype = $extend(hxd_App.prototype,{
 		new h3d_scene_fwd_DirLight(new h3d_Vector(0.3,-0.4,-0.9),this.s3d);
 		var model = new ozz.Model();
 		var bytes = hxd_Res.get_loader().loadCache("ozz_skin_mesh.ozz",hxd_res_Resource).entry.getBytes();
-		model.loadMeshes(bytes.b,bytes.length);
+		model.loadMeshesImpl(bytes.b,bytes.length);
 		var bytes = hxd_Res.get_loader().loadCache("ozz_skin_skeleton.ozz",hxd_res_Resource).entry.getBytes();
-		model.loadSkeleton(bytes.b,bytes.length);
+		model.loadSkeletonImpl(bytes.b,bytes.length);
 		var skeleton = model.getSkeleton();
-		haxe_Log.trace("Skeleton has " + skeleton.num_joints + " joints ( " + skeleton.num_soa_joints + " SOA ) ",{ fileName : "sample/Main.hx", lineNumber : 27, className : "Main", methodName : "init"});
+		haxe_Log.trace("Skeleton has " + skeleton.numJoints + " joints ( " + skeleton.numSoaJoints + " SOA ) ",{ fileName : "sample/Main.hx", lineNumber : 27, className : "Main", methodName : "init"});
 		var ozzmodel = new ozz_OzzModel(model,this.s3d);
 		var bytes = hxd_Res.get_loader().loadCache("ozz_skin_animation.ozz",hxd_res_Resource).entry.getBytes();
 		var nativeAnimation = new ozz.Animation();
@@ -30904,7 +30904,8 @@ ozz_OzzMesh.prototype = $extend(h3d_scene_MultiMaterial.prototype,{
 	draw: function(ctx) {
 		if(ctx.drawPass.index == 0) {
 			var numMatrices = 0;
-			var skinMatrices = this.model.getSkinMatrices(this.meshIndex);
+			var jointCount = this.mesh.jointCount;
+			var skinMatrices = this.model.getSkinMatricesImpl(this.meshIndex);
 			var idx = 0;
 			var midx = 0;
 			while(idx < skinMatrices.length) {
@@ -30970,7 +30971,7 @@ ozz_OzzModel.prototype = $extend(h3d_scene_Object.prototype,{
 		var _g1 = ozzMeshes.length;
 		while(_g < _g1) {
 			var i = _g++;
-			maxBones = Math.max(maxBones,ozzMeshes[i].highest_joint_index);
+			maxBones = Math.max(maxBones,ozzMeshes[i].highestJointIndex);
 		}
 		var _g = 0;
 		var _g1 = maxBones;
@@ -31021,7 +31022,7 @@ ozz_OzzModel.prototype = $extend(h3d_scene_Object.prototype,{
 var ozz_OzzPrim = function(mesh) {
 	h3d_prim_MeshPrimitive.call(this);
 	this.mesh = mesh;
-	haxe_Log.trace("init prim. " + mesh.parts_count + " parts with " + mesh.num_joints + " joints.",{ fileName : "ozz/OzzPrim.hx", lineNumber : 21, className : "ozz.OzzPrim", methodName : "new"});
+	haxe_Log.trace("init prim. " + mesh.partsCount + " parts with " + mesh.jointCount + " joints.",{ fileName : "ozz/OzzPrim.hx", lineNumber : 20, className : "ozz.OzzPrim", methodName : "new"});
 };
 $hxClasses["ozz.OzzPrim"] = ozz_OzzPrim;
 ozz_OzzPrim.__name__ = "ozz.OzzPrim";
@@ -31032,8 +31033,8 @@ ozz_OzzPrim.prototype = $extend(h3d_prim_MeshPrimitive.prototype,{
 		var stride = 19;
 		var names = ["position","normal","tangent","uv","color","weights","indexes"];
 		var offsets = [0,3,6,9,11,15,18];
-		var vertexCount = this.mesh.vertex_count;
-		var rawBuffer = this.mesh.getVertexBuffer();
+		var vertexCount = this.mesh.vertexCount;
+		var rawBuffer = this.mesh.getVertexBufferImpl();
 		var bytes = new haxe_io_Bytes(new ArrayBuffer(rawBuffer.byteLength));
 		var _g = 0;
 		var _g1 = rawBuffer.byteLength;
@@ -31052,7 +31053,7 @@ ozz_OzzPrim.prototype = $extend(h3d_prim_MeshPrimitive.prototype,{
 			this.addBuffer(names[i],this.buffer,offsets[i]);
 		}
 		var idxSrc = this.mesh.getIndices();
-		var length = this.mesh.triangle_index_count;
+		var length = this.mesh.triangleIndexCount;
 		if(length == null) {
 			length = 0;
 		}

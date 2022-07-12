@@ -9,13 +9,13 @@ import hxd.IndexBuffer;
 import h3d.col.Point;
 import hxd.FloatBuffer;
 import h3d.prim.MeshPrimitive;
-import ozz.Native.Mesh;
+import ozz.Ozz.Mesh;
 import h3d.prim.HMDModel;
 
 class OzzModel extends h3d.scene.Object {
 
 	public var idx : hxd.IndexBuffer;
-	var model: ozz.Native.Model;
+	var model: ozz.Ozz.Model;
 
 	public var meshes: Array<OzzMesh> = [];
 	public var heapsMeshes: Array<OzzMesh> = [];
@@ -27,10 +27,10 @@ class OzzModel extends h3d.scene.Object {
 	var skinMatrices : Array<h3d.Matrix> = [];
 
 	// @todo
-	public var ozzAnim: ozz.Native.Animation;
+	public var ozzAnim: ozz.Ozz.Animation;
 	var animRatio: Float = 0;
 
-	public function new( ozz: ozz.Native.Model, ?parent: Object ) {
+	public function new( ozz: ozz.Ozz.Model, ?parent: Object ) {
 
 		super(parent);
 		this.model = ozz;
@@ -78,7 +78,7 @@ class OzzModel extends h3d.scene.Object {
 		var maxBones: Int = 0;// model.getSkeleton().highestJointIndex();
 		for( i in 0 ... ozzMeshes.length )
 		{
-			maxBones = cast Math.max( maxBones, ozzMeshes[i].highest_joint_index );
+			maxBones = cast Math.max( maxBones, ozzMeshes[i].highestJointIndex );
 		}
 
 		for( i in 0 ... maxBones )
@@ -118,7 +118,7 @@ class OzzModel extends h3d.scene.Object {
 
 	override function sync( ctx : RenderContext )
 	{
-		var job = new ozz.Native.SamplingJob();
+		var job = new ozz.Ozz.SamplingJob();
 		job.setAnimation( ozzAnim );
 		job.ratio = animRatio;
 

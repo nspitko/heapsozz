@@ -1,5 +1,4 @@
 package ozz;
-import js.lib.DataView;
 import haxe.io.Bytes;
 import haxe.io.BytesBuffer;
 import h3d.Engine;
@@ -7,18 +6,18 @@ import hxd.IndexBuffer;
 import h3d.col.Point;
 import hxd.FloatBuffer;
 import h3d.prim.MeshPrimitive;
-import ozz.Native.Mesh;
+import ozz.Ozz.Mesh;
 import h3d.prim.HMDModel;
 
 class OzzPrim extends MeshPrimitive {
 
 	public var idx : hxd.IndexBuffer;
-	var mesh: ozz.Native.Mesh;
+	var mesh: ozz.Ozz.Mesh;
 
-	public function new( mesh: ozz.Native.Mesh = null) {
+	public function new( mesh: ozz.Ozz.Mesh = null) {
 		this.mesh = mesh;
 
-		trace('init prim. ${mesh.parts_count} parts with ${mesh.num_joints} joints.');
+		trace('init prim. ${mesh.partsCount} parts with ${mesh.jointCount} joints.');
 
 	}
 
@@ -36,9 +35,9 @@ class OzzPrim extends MeshPrimitive {
 
 		var names = ["position", "normal", "tangent", "uv", "color","weights","indexes"];
 		var offsets = [0,3,6,9,11,15,18];
-		var vertexCount = mesh.vertex_count;
+		var vertexCount = mesh.vertexCount;
 
-		var rawBuffer = mesh.getVertexBuffer();
+		var rawBuffer = mesh.getVertexBuffer( stride );
 
 		#if js
 
@@ -53,7 +52,7 @@ class OzzPrim extends MeshPrimitive {
 
 
 		#else
-		var bytes = rawBuffer.toBytes( vertexCount * stride );
+		var bytes = mesh.getVertexBuffer( stride );
 		#end
 
 
@@ -72,12 +71,15 @@ class OzzPrim extends MeshPrimitive {
 
 		// @todo copy this better
 		var idxSrc = mesh.getIndices();
-		idx = new IndexBuffer(mesh.triangle_index_count);
+		idx = new IndexBuffer(mesh.triangleIndexCount);
 
 		for( i in 0 ... idxSrc.length )
 		{
-
+			#if hl
+			idx.push(idxSrc.get(i));
+			#else
 			idx.push(idxSrc[i]);
+			#end
 		}
 
 

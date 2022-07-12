@@ -48,14 +48,29 @@ EMSCRIPTEN_BINDINGS(ozzSkeleton) {
 	class_<ozz::animation::Skeleton>("Skeleton")
 		.constructor<>()
 
-		.property("num_joints", &ozz::animation::Skeleton::num_joints)
-		.property("num_soa_joints", &ozz::animation::Skeleton::num_soa_joints)
-		.property("joint_parents", &ozz::animation::Skeleton::joint_parents)
+		.property("numJoints", &ozz::animation::Skeleton::num_joints)
+		.property("numSoaJoints", &ozz::animation::Skeleton::num_soa_joints)
+		.property("jointParents", &ozz::animation::Skeleton::joint_parents)
 		//.property("joint_names", &Mesh::joint_names)
 
 		//.function("load", &Mesh::load)
 		//.class_property("name", &animation_get_name)
     ;
 }
+#else
+
+
+HL_PRIM bool HL_NAME(skeleton_num_joints)(ozz::animation::Skeleton* skeleton) {
+	return skeleton->num_joints();
+}
+
+HL_PRIM bool HL_NAME(skeleton_num_soa_joints)(ozz::animation::Skeleton* skeleton) {
+	return skeleton->num_soa_joints();
+}
+
+DEFINE_PRIM(_I32, skeleton_num_joints, _STRUCT);
+DEFINE_PRIM(_I32, skeleton_num_soa_joints, _STRUCT);
+
+
 
 #endif

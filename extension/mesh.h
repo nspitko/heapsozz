@@ -83,7 +83,7 @@ struct Mesh {
 	}
 
 	// Returns the number of joints used to skin the mesh.
-	int num_joints() const { return static_cast<int>(inverse_bind_poses.size()); }
+	int joint_count() const { return static_cast<int>(inverse_bind_poses.size()); }
 
 	// Returns the highest joint number used in the skeleton.
 	int highest_joint_index() const {
@@ -118,17 +118,17 @@ struct Mesh {
 
 
 	// Buffer management
-#ifndef EMSCRIPTEN
 
-	varray* get_indices();
-	vbyte* getRawBuffer();
-#else
 	char *m_pVertexBuffer = nullptr;
 	uint16_t *m_pIndexBuffer = nullptr;
 	size_t m_unVertexBufferSize = 0;
 
-	emscripten::val getVertexBuffer();
-	emscripten::val getIndices();
+#ifndef EMSCRIPTEN
+	vbyte* get_vertex_buffer();
+	vbyte* get_indices();
+#else
+	emscripten::val get_vertex_buffer();
+	emscripten::val get_indices();
 #endif
 
 

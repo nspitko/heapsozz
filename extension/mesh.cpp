@@ -13,9 +13,9 @@ inline void writeFloat( char *dst, float src )
 		dst[i] = ((char*)&src)[i];
 }
 #ifdef EMSCRIPTEN
-emscripten::val Mesh::getVertexBuffer( )
+emscripten::val Mesh::get_vertex_buffer( )
 #else
-vbyte* Mesh::getRawBuffer( )
+vbyte* Mesh::get_vertex_buffer( )
 #endif
 {
 	// @todo we should just pass the buffer in from haxe and write straight to it.
@@ -35,15 +35,13 @@ vbyte* Mesh::getRawBuffer( )
 					fWidth * 3 + // weight
 					byteWidth * 4; // idx
 
-#ifdef EMSCRIPTEN
-	if( m_pVertexBuffer == nullptr )
-		m_unVertexBufferSize = sizeof(char) * ( stride * count );
+	if( m_pVertexBuffer != nullptr )
+		delete m_pVertexBuffer;
 
+	m_unVertexBufferSize = sizeof(char) * ( stride * count );
 	m_pVertexBuffer = (char *)malloc( m_unVertexBufferSize );
+
 	char* buff = m_pVertexBuffer;
-#else
-	vbyte* buff = hl_alloc_bytes( stride * count );
-#endif
 
 
 	int idx = 0;
@@ -52,8 +50,6 @@ vbyte* Mesh::getRawBuffer( )
 	for(int p=0; p<parts.size(); p++ )
 	{
 		Part part = parts[p];
-
-		printf("part influences count=%d, weights=%d, indices = %d\n", part.influences_count(), part.joint_weights.size(), part.joint_indices.size());
 
 		int indexStride = part.influences_count();
 		int weightStride = indexStride - 1;
@@ -69,9 +65,6 @@ vbyte* Mesh::getRawBuffer( )
 		int colorOffset = 0;
 		int indexOffset = 0;
 		int weightOffset = 0;
-
-		printf("Writing buffer for part %d from idx %d\n", p, idx);
-
 
 		for( int i=0; i< count; i++ )
 		{
@@ -116,10 +109,11 @@ vbyte* Mesh::getRawBuffer( )
 			writeFloat(buff + start + 64, part.joint_weights[i * 3 + 1] );
 			writeFloat(buff + start + 68, part.joint_weights[i * 3 + 2] );
 
-			buff[start + 72] = part.joint_indices[i * 4 + 0];
-			buff[start + 73] = part.joint_indices[i * 4 + 1];
-			buff[start + 74] = part.joint_indices[i * 4 + 2];
-			buff[start + 75] = part.joint_indices[i * 4 + 3];
+			// @todo Inheriting Heaps' 255 bone limit. Should warn somewhere if the model execeeds it
+			buff[start + 72] = (uint8_t)part.joint_indices[i * 4 + 0];
+			buff[start + 73] = (uint8_t)part.joint_indices[i * 4 + 1];
+			buff[start + 74] = (uint8_t)part.joint_indices[i * 4 + 2];
+			buff[start + 75] = (uint8_t)part.joint_indices[i * 4 + 3];
 
 		}
 	}
@@ -127,7 +121,7 @@ vbyte* Mesh::getRawBuffer( )
 #ifdef EMSCRIPTEN
 	return emscripten::val(emscripten::typed_memory_view(m_unVertexBufferSize, m_pVertexBuffer));
 #else
-	return buff;
+	return (vbyte*)m_pVertexBuffer;
 #endif
 
 }
@@ -145,10 +139,7 @@ bool Mesh::load(vbyte* data, int len)
 
 
 	if (!archive.TestTag<Mesh>())
-	{
-		printf("Failed to load mesh instance from file\n");
 		return false;
-	}
 
 	// Once the tag is validated, reading cannot fail.
 	archive >> *this;
@@ -156,46 +147,29 @@ bool Mesh::load(vbyte* data, int len)
 	return true;
 }
 #ifdef EMSCRIPTEN
-emscripten::val Mesh::getIndices( )
+emscripten::val Mesh::get_indices( )
 #else
-vbyte* Mesh::getIndices( )
+vbyte* Mesh::get_indices( )
 #endif
 {
-
 	int count = triangle_index_count();
 
-	printf("Writing index buffer for %d verts\n", count);
+	if( m_pIndexBuffer != nullptr )
+		delete m_pIndexBuffer;
 
-#ifdef EMSCRIPTEN
-	if( m_pIndexBuffer == nullptr )
-		m_pIndexBuffer = (uint16_t *)malloc( count * sizeof( uint16_t ) );
+	m_pIndexBuffer = (uint16_t *)malloc( count * sizeof( uint16_t ) );
 
-	for(int i=0; i<triangle_indices.size(); i++ )
+	for(size_t i=0; i<triangle_indices.size(); i++ )
 	{
 		m_pIndexBuffer[i] = triangle_indices[i];
 	}
 
+
+#ifdef EMSCRIPTEN
 	return emscripten::val(emscripten::typed_memory_view(count, m_pIndexBuffer));
-
 #else
-	varray* buff = hl_alloc_array( &hlt_i32, count );
-	uint32_t *indices = hl_aptr(buff, uint32_t);
-	int idx = 0;
-
-	for(int i=0; i<triangle_indices.size(); i++ )
-	{
-		indices[idx++] = triangle_indices[i];
-	}
-
-
-
-
-
-	return buff;
+	return (vbyte *)m_pIndexBuffer;
 #endif
-
-
-
 }
 
 
@@ -263,21 +237,69 @@ EMSCRIPTEN_BINDINGS(ozzMesh) {
 	class_<Mesh>("Mesh")
 		.constructor<>()
 
-		.function("getVertexBuffer", &Mesh::getVertexBuffer)
-		.function("getIndices", &Mesh::getIndices)
+		.function("getVertexBufferImpl", &Mesh::get_vertex_buffer)
+		.function("getIndices", &Mesh::get_indices)
 
-		.property("triangle_index_count", &Mesh::triangle_index_count)
-		.property("vertex_count", &Mesh::vertex_count)
-		.property("max_influences_count", &Mesh::max_influences_count)
+		.property("triangleIndexCount", &Mesh::triangle_index_count)
+		.property("vertexCount", &Mesh::vertex_count)
+		.property("maxInfluencesCount", &Mesh::max_influences_count)
 		.property("skinned", &Mesh::skinned)
-		.property("num_joints", &Mesh::num_joints)
-		.property("highest_joint_index", &Mesh::highest_joint_index)
+		.property("jointCount", &Mesh::joint_count)
+		.property("highestJointIndex", &Mesh::highest_joint_index)
 		//.property("parts_count", &Mesh::parts_count)
 		//.property("parts", &Mesh::parts)
-		.property("triangle_indices", &Mesh::triangle_indices)
+		//.property("triangleIndices", &Mesh::triangle_indices)
 		//.function("load", &Mesh::load)
 		//.class_property("name", &animation_get_name)
     ;
 }
+#else
+
+HL_PRIM vbyte* HL_NAME(mesh_get_vertex_buffer)(Mesh* mesh) {
+	return mesh->get_vertex_buffer();
+}
+
+HL_PRIM vbyte* HL_NAME(mesh_get_indices)(Mesh* mesh) {
+	return mesh->get_indices();
+}
+
+HL_PRIM int HL_NAME(mesh_triangle_index_count)(Mesh* mesh) {
+	return mesh->triangle_index_count();
+}
+
+HL_PRIM int HL_NAME(mesh_vertex_count)(Mesh* mesh) {
+	return mesh->vertex_count();
+}
+
+HL_PRIM int HL_NAME(mesh_max_influences_count)(Mesh* mesh) {
+	return mesh->max_influences_count();
+}
+
+HL_PRIM bool HL_NAME(mesh_skinned)(Mesh* mesh) {
+	return mesh->skinned();
+}
+
+HL_PRIM int HL_NAME(mesh_joint_count)(Mesh* mesh) {
+	return mesh->joint_count();
+}
+
+HL_PRIM int HL_NAME(mesh_highest_joint_index)(Mesh* mesh) {
+	return mesh->highest_joint_index();
+}
+
+HL_PRIM int HL_NAME(mesh_parts_count)(Mesh* mesh) {
+	return mesh->parts_count();
+}
+
+DEFINE_PRIM(_BYTES, mesh_get_vertex_buffer, _STRUCT);
+DEFINE_PRIM(_BYTES, mesh_get_indices, _STRUCT);
+DEFINE_PRIM(_I32, mesh_triangle_index_count, _STRUCT);
+DEFINE_PRIM(_I32, mesh_vertex_count, _STRUCT);
+DEFINE_PRIM(_I32, mesh_max_influences_count, _STRUCT);
+DEFINE_PRIM(_BOOL, mesh_skinned, _STRUCT);
+DEFINE_PRIM(_I32, mesh_joint_count, _STRUCT);
+DEFINE_PRIM(_I32, mesh_highest_joint_index, _STRUCT);
+DEFINE_PRIM(_I32, mesh_parts_count, _STRUCT);
+
 
 #endif

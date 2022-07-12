@@ -9,17 +9,17 @@ import hxd.IndexBuffer;
 import h3d.col.Point;
 import hxd.FloatBuffer;
 import h3d.prim.MeshPrimitive;
-import ozz.Native.Mesh;
+import ozz.Ozz.Mesh;
 import h3d.prim.HMDModel;
 
 class OzzMesh extends MultiMaterial
 {
 	var skinShader : SkinBase;
-	var model: ozz.Native.Model;
-	var mesh: ozz.Native.Mesh;
+	var model: ozz.Ozz.Model;
+	var mesh: ozz.Ozz.Mesh;
 	var meshIndex: Int;
 
-	public function new( ozzModel: ozz.Native.Model, ozzMesh: ozz.Native.Mesh, meshIdx: Int, shader: SkinBase, mats: Array<Material>, ?parent: Object )
+	public function new( ozzModel: ozz.Ozz.Model, ozzMesh: ozz.Ozz.Mesh, meshIdx: Int, shader: SkinBase, mats: Array<Material>, ?parent: Object )
 	{
 		meshIndex = meshIdx;
 		skinShader = shader;
@@ -33,6 +33,19 @@ class OzzMesh extends MultiMaterial
 		// but only bind matrices once per mesh thankfully
 	}
 
+	#if hl
+	inline function getMatrix( bytes: hl.Bytes, idx: Int ): Float
+	{
+		return bytes.getF32(idx * 4);
+	}
+	#else
+	inline function getMatrix( bytes: js.lib.Float32Array, idx: Int ): Float
+	{
+		return bytes[idx];
+	}
+	#end
+
+
 	override function draw( ctx : RenderContext )
 	{
 		// Assumption: The same model will be drawn in multiple passes sequentially
@@ -42,33 +55,36 @@ class OzzMesh extends MultiMaterial
 		{
 			// @todo this sucks
 			var numMatrices = 0;
-			var skinMatrices = model.getSkinMatrices( meshIndex );
+			var skinMatrices = model.getSkinMatrices( meshIndex, mesh.jointCount );
 
 			var idx = 0;
 			var midx = 0;
+
+
 			while( idx < skinMatrices.length )
 			{
 				var matrix = skinShader.bonesMatrixes[midx++];
+
 				//
-				matrix._11 = skinMatrices[idx++];
-				matrix._12 = skinMatrices[idx++];
-				matrix._13 = skinMatrices[idx++];
-				matrix._14 = skinMatrices[idx++];
+				matrix._11 = getMatrix( skinMatrices, idx++ );
+				matrix._12 = getMatrix( skinMatrices, idx++ );
+				matrix._13 = getMatrix( skinMatrices, idx++ );
+				matrix._14 = getMatrix( skinMatrices, idx++ );
 				//
-				matrix._21 = skinMatrices[idx++];
-				matrix._22 = skinMatrices[idx++];
-				matrix._23 = skinMatrices[idx++];
-				matrix._24 = skinMatrices[idx++];
+				matrix._21 = getMatrix( skinMatrices, idx++ );
+				matrix._22 = getMatrix( skinMatrices, idx++ );
+				matrix._23 = getMatrix( skinMatrices, idx++ );
+				matrix._24 = getMatrix( skinMatrices, idx++ );
 				//
-				matrix._31 = skinMatrices[idx++];
-				matrix._32 = skinMatrices[idx++];
-				matrix._33 = skinMatrices[idx++];
-				matrix._34 = skinMatrices[idx++];
+				matrix._31 = getMatrix( skinMatrices, idx++ );
+				matrix._32 = getMatrix( skinMatrices, idx++ );
+				matrix._33 = getMatrix( skinMatrices, idx++ );
+				matrix._34 = getMatrix( skinMatrices, idx++ );
 				//
-				matrix._41 = skinMatrices[idx++];
-				matrix._42 = skinMatrices[idx++];
-				matrix._43 = skinMatrices[idx++];
-				matrix._44 = skinMatrices[idx++];
+				matrix._41 = getMatrix( skinMatrices, idx++ );
+				matrix._42 = getMatrix( skinMatrices, idx++ );
+				matrix._43 = getMatrix( skinMatrices, idx++ );
+				matrix._44 = getMatrix( skinMatrices, idx++ );
 
 			}
 

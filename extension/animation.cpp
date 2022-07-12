@@ -5,14 +5,21 @@
 #include "ozz/base/io/archive.h"
 #include "ozz/base/io/stream.h"
 
-
-bool animation_load(ozz::animation::Animation& animation, std::string data, int len)
+#ifdef EMSCRIPTEN
+bool animationLoad(ozz::animation::Animation &animation, std::string data, int len)
+#else
+bool animationLoad(ozz::animation::Animation &animation, vbyte *data, int len)
+#endif
 {
 	printf("Loading animation archive\n" );
 
 
 	ozz::io::MemoryStream ms;
+#ifdef EMSCRIPTEN
 	ms.Write( data.c_str(), len );
+#else
+	ms.Write( data, len );
+#endif
 	ms.Seek(0,ms.kSet);
 
 	ozz::io::IArchive archive(&ms);
@@ -30,7 +37,7 @@ bool animation_load(ozz::animation::Animation& animation, std::string data, int 
 	return true;
 }
 
-std::string animation_get_name(const ozz::animation::Animation& animation)
+std::string animationGetName(const ozz::animation::Animation &animation)
 {
 	return std::string(animation.name());
 }
@@ -88,12 +95,45 @@ using namespace emscripten;
 EMSCRIPTEN_BINDINGS(ozzAnimation) {
 	class_<ozz::animation::Animation>("Animation")
 		.constructor<>()
-		.class_function("load", &animation_load)
+		.class_function("load", &animationLoad)
 		.property("duration", &ozz::animation::Animation::duration)
 		.property("trackCount", &ozz::animation::Animation::num_tracks)
 		.property("soaTrackCount", &ozz::animation::Animation::num_soa_tracks)
 		//.class_property("name", &animation_get_name)
     ;
 }
+
+#else
+HL_PRIM void HL_NAME(animation_new)(ozz::animation::Animation* animation)
+{
+	if (animation != nullptr) new (animation)ozz::animation::Animation();
+}
+
+
+HL_PRIM bool HL_NAME(animation_load)(ozz::animation::Animation* animation, vbyte* data, int len)
+{
+	return animationLoad(*animation, data, len);
+}
+
+HL_PRIM float HL_NAME(animation_get_duration)(ozz::animation::Animation* animation)
+{
+	return animation->duration();
+}
+
+HL_PRIM int HL_NAME(animation_get_track_count)(ozz::animation::Animation* animation)
+{
+	return animation->num_tracks();
+}
+
+HL_PRIM int HL_NAME(animation_get_soa_track_count)(ozz::animation::Animation* animation)
+{
+	return animation->num_soa_tracks();
+}
+
+DEFINE_PRIM(_VOID, animation_new, _STRUCT);
+DEFINE_PRIM(_BOOL, animation_load, _STRUCT _BYTES _I32);
+DEFINE_PRIM(_F32, animation_get_duration, _STRUCT );
+DEFINE_PRIM(_I32, animation_get_track_count, _STRUCT );
+DEFINE_PRIM(_I32, animation_get_soa_track_count, _STRUCT );
 
 #endif

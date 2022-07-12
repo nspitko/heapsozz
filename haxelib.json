@@ -6,5 +6,5 @@
 	"description" : "ozz-animation support for Heaps",
 	"version" : "0.0.1",
 	"releasenote" : "",
-	"dependencies": { "webidl" : "" }
+	"dependencies": {  }
 }

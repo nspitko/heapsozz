@@ -5,7 +5,7 @@ import h3d.mat.Texture;
 class Main extends hxd.App {
 
 	#if !js
-	var multiLoad: hl.NativeArray<ozz.Native.Mesh>;
+	var multiLoad: hl.NativeArray<ozz.Ozz.Mesh>;
 	#end
 
 	override function init()
@@ -14,27 +14,27 @@ class Main extends hxd.App {
 		new h3d.scene.fwd.DirLight(new h3d.Vector( 0.3, -0.4, -0.9), s3d);
 
 
-		var model = new ozz.Native.Model();
+		var model = new ozz.Ozz.Model();
 
 		var bytes = hxd.Res.ozz_skin_mesh.entry.getBytes();
-		model.loadMeshes( @:privateAccess bytes.b, bytes.length );
+		model.loadMeshes( bytes, bytes.length );
 
 		var bytes = hxd.Res.ozz_skin_skeleton.entry.getBytes();
-		model.loadSkeleton( @:privateAccess bytes.b, bytes.length );
+		model.loadSkeleton( bytes, bytes.length );
 
 		var skeleton = model.getSkeleton();
 
-		trace('Skeleton has ${skeleton.num_joints} joints ( ${skeleton.num_soa_joints} SOA ) ');
+		trace('Skeleton has ${skeleton.numJoints} joints ( ${skeleton.numSoaJoints} SOA ) ');
 
 		var ozzmodel = new ozz.OzzModel( model, s3d );
 
 
 		var bytes = hxd.Res.ozz_skin_animation.entry.getBytes();
-		var nativeAnimation = new ozz.Native.Animation();
+		var nativeAnimation = new ozz.Ozz.Animation();
 
 		#if js
 		trace('bytes len=${bytes.length}');
-		ozz.Native.Animation.load( nativeAnimation, @:privateAccess bytes.b, bytes.length );
+		ozz.Ozz.Animation.load( nativeAnimation, @:privateAccess bytes.b, bytes.length );
 		#else
 		nativeAnimation.load( bytes, bytes.length );
 		#end
@@ -42,7 +42,7 @@ class Main extends hxd.App {
 		#if js
 		//trace('Animation name: ${ nativeAnimation.name().toString() }');
 		#else
-		trace('Animation name: ${ @:privateAccess String.fromUTF8( nativeAnimation.name() ) }');
+		//trace('Animation name: ${ @:privateAccess String.fromUTF8( nativeAnimation.name() ) }');
 		#end
 		trace('info: ${nativeAnimation.duration }s long, ${nativeAnimation.trackCount} tracks (${nativeAnimation.soaTrackCount} SOA)');
 
@@ -64,7 +64,7 @@ class Main extends hxd.App {
 		new Main();
 		#else
 		hxd.Res.initEmbed();
-		ozz.Native.Init.init(() -> { new Main(); });
+		ozz.Ozz.Init.init(() -> { new Main(); });
 		#end
 
 	}

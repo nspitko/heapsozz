@@ -5,11 +5,11 @@
 #ifndef EMSCRIPTEN
 varray *span_of_const_char_const_to_varray( ozz::span<const char* const> input )
 {
-	varray* varr = hl_alloc_array( &hlt_bytes, input.size() );
+	varray* varr = hl_alloc_array( &hlt_bytes, (int)input.size() );
 	vbyte** buff = hl_aptr(varr, vbyte*);
 
 
-	for( int i=0; i<input.size();i++)
+	for( size_t i=0; i<input.size();i++)
 	{
 		buff[i] = const_char_to_vbytes( input[i] );
 	}

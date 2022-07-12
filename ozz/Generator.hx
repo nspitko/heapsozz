@@ -38,7 +38,7 @@ class Generator {
 
 ';
 
-	static var opts = { idlFile : "ozz/ozz.idl", nativeLib : "ozz", outputDir : "build", includeCode : INCLUDE, autoGC : true };
+	static var opts = { nativeLib : "ozz", outputDir : "build", includeCode : INCLUDE, autoGC : true };
 
 	static var cwd: String;
 	static function relPath(path:String):String

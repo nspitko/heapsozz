@@ -25,4 +25,26 @@ EMSCRIPTEN_BINDINGS(ozzSamplingJob) {
     ;
 }
 
+#else
+
+
+HL_PRIM void HL_NAME(sampling_job_new)(ozz::animation::SamplingJob* job)
+{
+	if (job != nullptr) new (job)ozz::animation::SamplingJob();
+}
+
+HL_PRIM bool HL_NAME(sampling_job_validate)(ozz::animation::SamplingJob* job)
+{
+	return job->Validate();
+}
+
+HL_PRIM void HL_NAME(sampling_job_set_animation)(ozz::animation::SamplingJob* job, ozz::animation::Animation* animation)
+{
+	job->animation = animation;
+}
+
+DEFINE_PRIM(_VOID, sampling_job_new, _STRUCT);
+DEFINE_PRIM(_BOOL, sampling_job_validate, _STRUCT);
+DEFINE_PRIM(_VOID, sampling_job_set_animation, _STRUCT _STRUCT);
+
 #endif
