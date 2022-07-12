@@ -60,11 +60,11 @@ EMSCRIPTEN_BINDINGS(ozzSkeleton) {
 #else
 
 
-HL_PRIM bool HL_NAME(skeleton_num_joints)(ozz::animation::Skeleton* skeleton) {
+HL_PRIM int HL_NAME(skeleton_num_joints)(ozz::animation::Skeleton* skeleton) {
 	return skeleton->num_joints();
 }
 
-HL_PRIM bool HL_NAME(skeleton_num_soa_joints)(ozz::animation::Skeleton* skeleton) {
+HL_PRIM int HL_NAME(skeleton_num_soa_joints)(ozz::animation::Skeleton* skeleton) {
 	return skeleton->num_soa_joints();
 }
 

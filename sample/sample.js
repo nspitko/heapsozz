@@ -30908,7 +30908,7 @@ ozz_OzzMesh.prototype = $extend(h3d_scene_MultiMaterial.prototype,{
 			var skinMatrices = this.model.getSkinMatricesImpl(this.meshIndex);
 			var idx = 0;
 			var midx = 0;
-			while(idx < skinMatrices.length) {
+			while(idx < this.skinShader.bonesMatrixes__.length * 16) {
 				var matrix = this.skinShader.bonesMatrixes__[midx++];
 				matrix._11 = skinMatrices[idx++];
 				matrix._12 = skinMatrices[idx++];
@@ -31060,7 +31060,7 @@ ozz_OzzPrim.prototype = $extend(h3d_prim_MeshPrimitive.prototype,{
 		var this1 = new Array(length);
 		this.idx = this1;
 		var _g = 0;
-		var _g1 = idxSrc.length;
+		var _g1 = this.mesh.triangleIndexCount;
 		while(_g < _g1) {
 			var i = _g++;
 			this.idx.push(idxSrc[i]);

@@ -23,5 +23,5 @@ You also need cmake, and regular make too, because I hate you.
 The HL build must be run first, as it generates the vcproj files that emscripten uses to get a file list. It won't actually compile right now but that's ok, we only really needed the cmake output. If cmake isn't using VS (and thus not generating vcproj files) it won't compile.
 
 ```
-haxe -lib webidl --macro "ozz.Generator.generateJs()"
+haxe --macro "ozz.Generator.generateJs()"
 ```

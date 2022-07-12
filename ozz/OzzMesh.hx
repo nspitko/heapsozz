@@ -34,24 +34,17 @@ class OzzMesh extends MultiMaterial
 	}
 
 	#if hl
-	inline function getMatrix( bytes: hl.Bytes, idx: Int ): Float
-	{
-		return bytes.getF32(idx * 4);
-	}
+	inline function getMatrix( bytes: hl.Bytes, idx: Int ): Float { return bytes.getF32(idx * 4); }
 	#else
-	inline function getMatrix( bytes: js.lib.Float32Array, idx: Int ): Float
-	{
-		return bytes[idx];
-	}
+	inline function getMatrix( bytes: js.lib.Float32Array, idx: Int ): Float { return bytes[idx]; }
 	#end
-
 
 	override function draw( ctx : RenderContext )
 	{
 		// Assumption: The same model will be drawn in multiple passes sequentially
 		// This MAY NOT BE TRUE if the engine tries to optimize for lower texture rebinds
 		// please verify.
-		if( ctx.drawPass.index == 0)
+		if( ctx.drawPass.index == 0 )
 		{
 			// @todo this sucks
 			var numMatrices = 0;
@@ -61,7 +54,7 @@ class OzzMesh extends MultiMaterial
 			var midx = 0;
 
 
-			while( idx < skinMatrices.length )
+			while( idx < skinShader.bonesMatrixes.length * 16 )
 			{
 				var matrix = skinShader.bonesMatrixes[midx++];
 

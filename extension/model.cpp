@@ -97,7 +97,7 @@ bool Model::loadSkeleton(vbyte *data, int len)
 
 	if (!archive.TestTag<ozz::animation::Skeleton>())
 	{
-		printf("Failed to load mesh instance from file\n");
+		printf("Failed to load skeleton instance from file\n");
 		return false;
 	}
 

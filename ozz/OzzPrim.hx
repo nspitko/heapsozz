@@ -73,10 +73,10 @@ class OzzPrim extends MeshPrimitive {
 		var idxSrc = mesh.getIndices();
 		idx = new IndexBuffer(mesh.triangleIndexCount);
 
-		for( i in 0 ... idxSrc.length )
+		for( i in 0 ... mesh.triangleIndexCount )
 		{
 			#if hl
-			idx.push(idxSrc.get(i));
+			idx.push(idxSrc.getUInt16(i * 2));
 			#else
 			idx.push(idxSrc[i]);
 			#end

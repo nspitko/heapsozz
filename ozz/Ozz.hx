@@ -128,6 +128,37 @@ class Init {
 	static function sampling_job_validate(samplingJob: SamplingJob): Bool { return false; }
 	static function sampling_job_setAnimation(samplingJob: SamplingJob, animation: Animation): Void { }
 
+	private var padding1: Float;
+	private var padding2: Float;
+	private var padding3: Float;
+	private var padding4: Float;
+	private var padding5: Float;
+	private var padding6: Float;
+	private var padding7: Float;
+	private var padding8: Float;
+	private var padding9: Float;
+	private var padding10: Float;
+	private var padding11: Float;
+	private var padding12: Float;
+	private var padding13: Float;
+	private var padding14: Float;
+	private var padding15: Float;
+	private var padding16: Float;
+	private var padding17: Float;
+	private var padding18: Float;
+	private var padding19: Float;
+	private var padding20: Float;
+	private var padding21: Float;
+	private var padding22: Float;
+	private var padding23: Float;
+	private var padding24: Float;
+	private var padding25: Float;
+	private var padding26: Float;
+	private var padding27: Float;
+	private var padding28: Float;
+	private var padding29: Float;
+	private var padding30: Float;
+
 
 
 }
@@ -153,6 +184,53 @@ class Init {
 	static function animation_get_duration(animation: Animation): Single { return 0; }
 	static function animation_get_track_count(animation: Animation): Int { return 0; }
 	static function animation_get_soa_track_count(animation: Animation): Int { return 0; }
+
+	private var padding1: Float;
+	private var padding2: Float;
+	private var padding3: Float;
+	private var padding4: Float;
+	private var padding5: Float;
+	private var padding6: Float;
+	private var padding7: Float;
+	private var padding8: Float;
+	private var padding9: Float;
+	private var padding10: Float;
+	private var padding11: Float;
+	private var padding12: Float;
+	private var padding13: Float;
+	private var padding14: Float;
+	private var padding15: Float;
+	private var padding16: Float;
+	private var padding17: Float;
+	private var padding18: Float;
+	private var padding19: Float;
+	private var padding20: Float;
+	private var padding21: Float;
+	private var padding22: Float;
+	private var padding23: Float;
+	private var padding24: Float;
+	private var padding25: Float;
+	private var padding26: Float;
+	private var padding27: Float;
+	private var padding28: Float;
+	private var padding29: Float;
+	private var padding30: Float;
+	private var padding31: Float;
+	private var padding32: Float;
+	private var padding33: Float;
+	private var padding34: Float;
+	private var padding35: Float;
+	private var padding36: Float;
+	private var padding37: Float;
+	private var padding38: Float;
+	private var padding39: Float;
+	private var padding40: Float;
+	private var padding41: Float;
+	private var padding42: Float;
+	private var padding43: Float;
+	private var padding44: Float;
+	private var padding45: Float;
+	private var padding46: Float;
 }
 
 @:keep
@@ -182,7 +260,7 @@ class Init {
 	public inline function get_partsCount() { return mesh_parts_count(this); }
 
 	public inline function getVertexBuffer(stride: Int): Bytes { return mesh_get_vertex_buffer(this).toBytes( vertexCount * stride ); }
-	public inline function getIndices(): Bytes { return mesh_get_indices(this).toBytes(triangleIndexCount); }
+	public inline function getIndices(): Bytes { return mesh_get_indices(this).toBytes(triangleIndexCount * 2); }
 
 	static function mesh_get_vertex_buffer( mesh: Mesh ): hl.Bytes { return null; }
 	static function mesh_get_indices( mesh: Mesh ): hl.Bytes { return null; }
@@ -193,6 +271,13 @@ class Init {
 	static function mesh_joint_count( mesh: Mesh ): Int { return 0; }
 	static function mesh_highest_joint_index( mesh: Mesh ): Int { return 0; }
 	static function mesh_parts_count( mesh: Mesh ): Int { return 0; }
+
+	private var padding1: Float;
+	private var padding2: Float;
+	private var padding3: Float;
+	private var padding4: Float;
+	private var padding5: Float;
+	private var padding6: Float;
 }
 
 @:keep
@@ -207,6 +292,8 @@ class Init {
 
 	static function skeleton_num_joints(skeleton: Skeleton): Int { return 0; }
 	static function skeleton_num_soa_joints(skeleton: Skeleton): Int { return 0; }
+
+	// Never allocated from Haxe, does not need padding
 }
 
 @:keep
@@ -229,6 +316,54 @@ class Init {
 	static function model_get_meshes(model: Model): hl.NativeArray<Mesh> { return null; }
 	static function model_get_skin_matrices(model: Model, meshIndex: Int): hl.Bytes { return null; }
 	static function model_run_sampling_job(model: Model, job: SamplingJob): Bool { return false; }
+
+	private var padding1: Float;
+	private var padding2: Float;
+	private var padding3: Float;
+	private var padding4: Float;
+	private var padding5: Float;
+	private var padding6: Float;
+	private var padding7: Float;
+	private var padding8: Float;
+	private var padding9: Float;
+	private var padding10: Float;
+	private var padding11: Float;
+	private var padding12: Float;
+	private var padding13: Float;
+	private var padding14: Float;
+	private var padding15: Float;
+	private var padding16: Float;
+	private var padding17: Float;
+	private var padding18: Float;
+	private var padding19: Float;
+	private var padding20: Float;
+	private var padding21: Float;
+	private var padding22: Float;
+	private var padding23: Float;
+	private var padding24: Float;
+	private var padding25: Float;
+	private var padding26: Float;
+	private var padding27: Float;
+	private var padding28: Float;
+	private var padding29: Float;
+	private var padding30: Float;
+	private var padding31: Float;
+	private var padding32: Float;
+	private var padding33: Float;
+	private var padding34: Float;
+	private var padding35: Float;
+	private var padding36: Float;
+	private var padding37: Float;
+	private var padding38: Float;
+	private var padding39: Float;
+	private var padding40: Float;
+	private var padding41: Float;
+	private var padding42: Float;
+	private var padding43: Float;
+	private var padding44: Float;
+	private var padding45: Float;
+	private var padding46: Float;
+
 }
 
 class Init

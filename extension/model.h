@@ -26,7 +26,7 @@
  */
 struct Model
 {
-	Model( ) : context()
+	Model( ) : context(), meshes(), localTransforms(), modelMatrices(), skinningMatrices()
 	{
 		printf("Init\n");
 	}
