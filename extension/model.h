@@ -1,3 +1,4 @@
+#pragma once
 
 #include "mesh.h"
 #include "skeleton.h"
@@ -28,14 +29,18 @@ struct Model
 {
 	Model( ) : context(), meshes(), localTransforms(), modelMatrices(), skinningMatrices()
 	{
-		printf("Init\n");
 	}
 
+	~Model()
+	{
+		if( skinningMatrixBuffer != nullptr )
+			free( skinningMatrixBuffer );
+	}
 
 
 	bool runSamplingJob( ozz::animation::SamplingJob *job );
 
-	float *m_pSkinMatrixBuffer = nullptr;
+	float *skinningMatrixBuffer = nullptr;
 
 	#ifdef EMSCRIPTEN
 	bool loadMeshes(std::string data, int len);

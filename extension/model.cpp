@@ -127,10 +127,10 @@ vbyte* Model::getSkinMatrices( int meshIndex )
 
 
 	int size = numSkinJoints * (4*4);
-	if( m_pSkinMatrixBuffer == nullptr )
-		m_pSkinMatrixBuffer = (float *)malloc( sizeof(float) * size );
+	if( skinningMatrixBuffer == nullptr )
+		skinningMatrixBuffer = (float *)malloc( sizeof(float) * size );
 
-	float* farr = m_pSkinMatrixBuffer;
+	float* farr = skinningMatrixBuffer;
 
 	int a=0;
 
@@ -171,9 +171,9 @@ vbyte* Model::getSkinMatrices( int meshIndex )
 	}
 
 #ifdef EMSCRIPTEN
-	return emscripten::val(emscripten::typed_memory_view(size, m_pSkinMatrixBuffer));;
+	return emscripten::val(emscripten::typed_memory_view(size, skinningMatrixBuffer));
 #else
-	return (vbyte*)m_pSkinMatrixBuffer;
+	return (vbyte*)skinningMatrixBuffer;
 #endif
 }
 

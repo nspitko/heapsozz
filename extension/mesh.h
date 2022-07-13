@@ -1,13 +1,15 @@
+#pragma once
+
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#include <emscripten/bind.h>
+#endif
 
 #include "ozz/base/containers/vector.h"
 #include "ozz/base/io/archive_traits.h"
 #include "ozz/base/span.h"
 #include "ozz/base/maths/soa_float4x4.h"
 
-
-
-#ifndef EXTENSION_MESH_H
-#define EXTENSION_MESH_H
 
 struct Part {
 		int vertex_count() const { return static_cast<int>(positions.size()) / 3; }
@@ -50,6 +52,16 @@ struct Part {
 	};
 
 struct Mesh {
+
+	~Mesh()
+	{
+		if( vertexBuffer != nullptr )
+			free( vertexBuffer );
+
+		if( indexBuffer != nullptr )
+			free( indexBuffer );
+	}
+
 	// Number of triangle indices for the mesh.
 	int triangle_index_count() const {
 		return static_cast<int>(triangle_indices.size());
@@ -118,9 +130,9 @@ struct Mesh {
 
 	// Buffer management
 
-	char *m_pVertexBuffer = nullptr;
-	uint16_t *m_pIndexBuffer = nullptr;
-	size_t m_unVertexBufferSize = 0;
+	size_t vertexBufferSize;
+	char *vertexBuffer = nullptr;
+	uint16_t *indexBuffer = nullptr;
 
 #ifndef EMSCRIPTEN
 	char* get_vertex_buffer();
@@ -165,6 +177,3 @@ struct Extern<Mesh> {
 
 int mesh_get_vertex_count(Mesh* mesh);
 
-
-
-#endif

@@ -35,13 +35,14 @@ char* Mesh::get_vertex_buffer( )
 					fWidth * 3 + // weight
 					byteWidth * 4; // idx
 
-	if( m_pVertexBuffer != nullptr )
-		delete m_pVertexBuffer;
+	if( vertexBuffer != nullptr )
+		free( vertexBuffer );
 
-	m_unVertexBufferSize = sizeof(char) * ( stride * count );
-	m_pVertexBuffer = (char *)malloc( m_unVertexBufferSize );
+	vertexBufferSize = stride * count;
 
-	char* buff = m_pVertexBuffer;
+	vertexBuffer = (char *)malloc( sizeof(char) * ( stride * count ) );
+
+	char* buff = vertexBuffer;
 
 
 	int idx = 0;
@@ -119,9 +120,9 @@ char* Mesh::get_vertex_buffer( )
 	}
 
 #ifdef EMSCRIPTEN
-	return emscripten::val(emscripten::typed_memory_view(m_unVertexBufferSize, m_pVertexBuffer));
+	return emscripten::val(emscripten::typed_memory_view(vertexBufferSize, vertexBuffer));
 #else
-	return (char*)m_pVertexBuffer;
+	return (char*)vertexBuffer;
 #endif
 
 }
@@ -154,21 +155,21 @@ char* Mesh::get_indices( )
 {
 	int count = triangle_index_count();
 
-	if( m_pIndexBuffer != nullptr )
-		delete m_pIndexBuffer;
+	if( indexBuffer != nullptr )
+		free( indexBuffer );
 
-	m_pIndexBuffer = (uint16_t *)malloc( count * sizeof( uint16_t ) );
+	indexBuffer = (uint16_t *)malloc( count * sizeof( uint16_t ) );
 
 	for(size_t i=0; i<triangle_indices.size(); i++ )
 	{
-		m_pIndexBuffer[i] = triangle_indices[i];
+		indexBuffer[i] = triangle_indices[i];
 	}
 
 
 #ifdef EMSCRIPTEN
-	return emscripten::val(emscripten::typed_memory_view(count, m_pIndexBuffer));
+	return emscripten::val(emscripten::typed_memory_view(count, indexBuffer));
 #else
-	return (char *)m_pIndexBuffer;
+	return (char *)indexBuffer;
 #endif
 }
 

@@ -25,3 +25,4 @@ buildjs.bat
 build
 .vs
 tools/
+sample/sample.js.map

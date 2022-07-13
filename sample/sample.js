@@ -30961,7 +30961,7 @@ ozz_OzzModel.prototype = $extend(h3d_scene_Object.prototype,{
 		this.skinShader = ozzShader;
 		var _this = this.skinShader;
 		_this.constModified = true;
-		_this.fourBonesByVertex__ = false;
+		_this.fourBonesByVertex__ = true;
 		var mat = h3d_mat_Material.create(h3d_mat_Texture.fromColor(5592405));
 		mat.set_castShadows(false);
 		mat.set_receiveShadows(false);
