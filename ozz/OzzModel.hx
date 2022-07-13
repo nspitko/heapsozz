@@ -65,7 +65,7 @@ class OzzModel extends h3d.scene.Object {
 		var ozzShader = new ozz.OzzSkinShader();
 		//ozzShader.stride = 4;
 		skinShader = ozzShader; // hasNormalMap ? new h3d.shader.SkinTangent() : new h3d.shader.Skin();
-		skinShader.fourBonesByVertex = false;
+		skinShader.fourBonesByVertex = true;
 
 
 		// @todo
