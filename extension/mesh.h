@@ -4,7 +4,6 @@
 #include "ozz/base/span.h"
 #include "ozz/base/maths/soa_float4x4.h"
 
-#include "utils.h"
 
 
 #ifndef EXTENSION_MESH_H
@@ -83,7 +82,7 @@ struct Mesh {
 	}
 
 	// Returns the number of joints used to skin the mesh.
-	int joint_count() const { return static_cast<int>(inverse_bind_poses.size()); }
+	int num_joints() const { return static_cast<int>(inverse_bind_poses.size()); }
 
 	// Returns the highest joint number used in the skeleton.
 	int highest_joint_index() const {
@@ -111,7 +110,7 @@ struct Mesh {
 	typedef ozz::vector<ozz::math::Float4x4> InversBindPoses;
 	InversBindPoses inverse_bind_poses;
 
-	bool load(vbyte* data, int len);
+	bool load(char* data, int len);
 
 	const int parts_count() {  return static_cast<int>(parts.size()); }
 	const int joint_remap_count() {  return static_cast<int>(joint_remaps.size()); }
@@ -124,8 +123,8 @@ struct Mesh {
 	size_t m_unVertexBufferSize = 0;
 
 #ifndef EMSCRIPTEN
-	vbyte* get_vertex_buffer();
-	vbyte* get_indices();
+	char* get_vertex_buffer();
+	char* get_indices();
 #else
 	emscripten::val get_vertex_buffer();
 	emscripten::val get_indices();

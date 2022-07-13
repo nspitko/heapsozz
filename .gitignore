@@ -24,3 +24,4 @@ buildjs.bat
 *.tmp
 build
 .vs
+tools/

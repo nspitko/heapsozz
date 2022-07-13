@@ -123,7 +123,7 @@ vbyte* Model::getSkinMatrices( int meshIndex )
 	// First, apply skinning matrices (use joint remaps and multiply by inverse bind pose)
 	Mesh *mesh = &meshes[meshIndex];
 
-	int numSkinJoints = mesh->joint_count();
+	int numSkinJoints = mesh->num_joints();
 
 
 	int size = numSkinJoints * (4*4);

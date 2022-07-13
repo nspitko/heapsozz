@@ -19,7 +19,8 @@
 
 typedef char vbyte;
 
-#else
+#endif
+#ifdef HL
 
 	#define HL_NAME(n) ozz_##n
 

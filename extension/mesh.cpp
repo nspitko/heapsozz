@@ -15,7 +15,7 @@ inline void writeFloat( char *dst, float src )
 #ifdef EMSCRIPTEN
 emscripten::val Mesh::get_vertex_buffer( )
 #else
-vbyte* Mesh::get_vertex_buffer( )
+char* Mesh::get_vertex_buffer( )
 #endif
 {
 	// @todo we should just pass the buffer in from haxe and write straight to it.
@@ -121,12 +121,12 @@ vbyte* Mesh::get_vertex_buffer( )
 #ifdef EMSCRIPTEN
 	return emscripten::val(emscripten::typed_memory_view(m_unVertexBufferSize, m_pVertexBuffer));
 #else
-	return (vbyte*)m_pVertexBuffer;
+	return (char*)m_pVertexBuffer;
 #endif
 
 }
 
-bool Mesh::load(vbyte* data, int len)
+bool Mesh::load(char* data, int len)
 {
 	printf("Loading mesh archive\n" );
 
@@ -149,7 +149,7 @@ bool Mesh::load(vbyte* data, int len)
 #ifdef EMSCRIPTEN
 emscripten::val Mesh::get_indices( )
 #else
-vbyte* Mesh::get_indices( )
+char* Mesh::get_indices( )
 #endif
 {
 	int count = triangle_index_count();
@@ -168,7 +168,7 @@ vbyte* Mesh::get_indices( )
 #ifdef EMSCRIPTEN
 	return emscripten::val(emscripten::typed_memory_view(count, m_pIndexBuffer));
 #else
-	return (vbyte *)m_pIndexBuffer;
+	return (char *)m_pIndexBuffer;
 #endif
 }
 
@@ -244,7 +244,7 @@ EMSCRIPTEN_BINDINGS(ozzMesh) {
 		.property("vertexCount", &Mesh::vertex_count)
 		.property("maxInfluencesCount", &Mesh::max_influences_count)
 		.property("skinned", &Mesh::skinned)
-		.property("jointCount", &Mesh::joint_count)
+		.property("jointCount", &Mesh::num_joints)
 		.property("highestJointIndex", &Mesh::highest_joint_index)
 		//.property("parts_count", &Mesh::parts_count)
 		//.property("parts", &Mesh::parts)
@@ -253,14 +253,15 @@ EMSCRIPTEN_BINDINGS(ozzMesh) {
 		//.class_property("name", &animation_get_name)
     ;
 }
-#else
+#endif
+#ifdef HL
 
 HL_PRIM vbyte* HL_NAME(mesh_get_vertex_buffer)(Mesh* mesh) {
-	return mesh->get_vertex_buffer();
+	return (vbyte*)mesh->get_vertex_buffer();
 }
 
 HL_PRIM vbyte* HL_NAME(mesh_get_indices)(Mesh* mesh) {
-	return mesh->get_indices();
+	return (vbyte*)mesh->get_indices();
 }
 
 HL_PRIM int HL_NAME(mesh_triangle_index_count)(Mesh* mesh) {
@@ -280,7 +281,7 @@ HL_PRIM bool HL_NAME(mesh_skinned)(Mesh* mesh) {
 }
 
 HL_PRIM int HL_NAME(mesh_joint_count)(Mesh* mesh) {
-	return mesh->joint_count();
+	return mesh->num_joints();
 }
 
 HL_PRIM int HL_NAME(mesh_highest_joint_index)(Mesh* mesh) {
