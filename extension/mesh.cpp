@@ -7,6 +7,36 @@
 #include "ozz/base/maths/math_archive.h"
 #include "ozz/base/maths/simd_math_archive.h"
 
+
+
+// @todo: Currently we don't share skeletons/meshes between instances. This is pretty bad!
+#ifdef EMSCRIPTEN
+int Mesh::load(std::string data, int len)
+#else
+int Mesh::load(char *data, int len)
+#endif
+{
+	ozz::io::MemoryStream ms;
+	#ifdef EMSCRIPTEN
+	ms.Write( data.data(), len );
+	#else
+	ms.Write( data, len );
+	#endif
+	ms.Seek(0,ms.kSet);
+
+	ozz::io::IArchive archive(&ms);
+
+	if (!archive.TestTag<Mesh>())
+	{
+		printf("Failed to load mesh instance from file\n");
+		return 0;
+	}
+
+	archive >> *this;
+
+	return ms.Tell();
+}
+
 inline void writeFloat( char *dst, float src )
 {
 	for(int i = 0; i < 4; i++)
@@ -127,26 +157,6 @@ char* Mesh::get_vertex_buffer( )
 
 }
 
-bool Mesh::load(char* data, int len)
-{
-	printf("Loading mesh archive\n" );
-
-
-	ozz::io::MemoryStream ms;
-	ms.Write( data, len );
-	ms.Seek(0,ms.kSet);
-
-	ozz::io::IArchive archive(&ms);
-
-
-	if (!archive.TestTag<Mesh>())
-		return false;
-
-	// Once the tag is validated, reading cannot fail.
-	archive >> *this;
-
-	return true;
-}
 #ifdef EMSCRIPTEN
 emscripten::val Mesh::get_indices( )
 #else
@@ -238,8 +248,10 @@ EMSCRIPTEN_BINDINGS(ozzMesh) {
 	class_<Mesh>("Mesh")
 		.constructor<>()
 
+		.function("loadImpl", &Mesh::load)
 		.function("getVertexBufferImpl", &Mesh::get_vertex_buffer)
 		.function("getIndices", &Mesh::get_indices)
+		.function("loadMeshImpl", &Mesh::load)
 
 		.property("triangleIndexCount", &Mesh::triangle_index_count)
 		.property("vertexCount", &Mesh::vertex_count)
@@ -257,42 +269,67 @@ EMSCRIPTEN_BINDINGS(ozzMesh) {
 #endif
 #ifdef HL
 
-HL_PRIM vbyte* HL_NAME(mesh_get_vertex_buffer)(Mesh* mesh) {
-	return (vbyte*)mesh->get_vertex_buffer();
+
+static void mesh_finalize(hl_mesh *m)
+{
+	m->mesh.~Mesh();
 }
 
-HL_PRIM vbyte* HL_NAME(mesh_get_indices)(Mesh* mesh) {
-	return (vbyte*)mesh->get_indices();
+/**
+ * We use this to allocate the object with a finalizer; since Haxe doesn't have native
+ * destructors, this is the only way to currently have this kind of behavior.
+ */
+HL_PRIM hl_mesh* HL_NAME(mesh_init)()
+{
+	hl_mesh* hl_mem = (hl_mesh*)hl_gc_alloc_finalizer(sizeof(hl_mesh));
+	hl_mem->finalize = mesh_finalize;
+	new (&hl_mem->mesh)Mesh();
+	return hl_mem;
 }
 
-HL_PRIM int HL_NAME(mesh_triangle_index_count)(Mesh* mesh) {
-	return mesh->triangle_index_count();
+HL_PRIM vbyte* HL_NAME(mesh_get_vertex_buffer)(hl_mesh* m) {
+	return (vbyte*)m->mesh.get_vertex_buffer();
 }
 
-HL_PRIM int HL_NAME(mesh_vertex_count)(Mesh* mesh) {
-	return mesh->vertex_count();
+HL_PRIM bool HL_NAME(mesh_load)(hl_mesh* m, vbyte* data, int length) {
+	return m->mesh.load((char *)data, length);
 }
 
-HL_PRIM int HL_NAME(mesh_max_influences_count)(Mesh* mesh) {
-	return mesh->max_influences_count();
+
+HL_PRIM vbyte* HL_NAME(mesh_get_indices)(hl_mesh* m) {
+	return (vbyte*)m->mesh.get_indices();
 }
 
-HL_PRIM bool HL_NAME(mesh_skinned)(Mesh* mesh) {
-	return mesh->skinned();
+HL_PRIM int HL_NAME(mesh_triangle_index_count)(hl_mesh* m) {
+	return m->mesh.triangle_index_count();
 }
 
-HL_PRIM int HL_NAME(mesh_joint_count)(Mesh* mesh) {
-	return mesh->num_joints();
+HL_PRIM int HL_NAME(mesh_vertex_count)(hl_mesh* m) {
+	return m->mesh.vertex_count();
 }
 
-HL_PRIM int HL_NAME(mesh_highest_joint_index)(Mesh* mesh) {
-	return mesh->highest_joint_index();
+HL_PRIM int HL_NAME(mesh_max_influences_count)(hl_mesh* m) {
+	return m->mesh.max_influences_count();
 }
 
-HL_PRIM int HL_NAME(mesh_parts_count)(Mesh* mesh) {
-	return mesh->parts_count();
+HL_PRIM bool HL_NAME(mesh_skinned)(hl_mesh* m) {
+	return m->mesh.skinned();
 }
 
+HL_PRIM int HL_NAME(mesh_joint_count)(hl_mesh* m) {
+	return m->mesh.num_joints();
+}
+
+HL_PRIM int HL_NAME(mesh_highest_joint_index)(hl_mesh* m) {
+	return m->mesh.highest_joint_index();
+}
+
+HL_PRIM int HL_NAME(mesh_parts_count)(hl_mesh* m) {
+	return m->mesh.parts_count();
+}
+
+DEFINE_PRIM(_STRUCT, mesh_init, _NO_ARG );
+DEFINE_PRIM(_I32, mesh_load, _STRUCT _BYTES _I32);
 DEFINE_PRIM(_BYTES, mesh_get_vertex_buffer, _STRUCT);
 DEFINE_PRIM(_BYTES, mesh_get_indices, _STRUCT);
 DEFINE_PRIM(_I32, mesh_triangle_index_count, _STRUCT);

@@ -13,7 +13,14 @@
 bool animation_load(ozz::animation::Animation& animation, std::string data, int len);
 std::string animation_get_name(ozz::animation::Animation *animation);
 #else
+typedef struct _hl_animation hl_animation;
+struct _hl_animation {
+	void(*finalize)(hl_animation*);
+	ozz::animation::Animation animation;
+};
+
 bool load_animation(ozz::animation::Animation *animation, vbyte* data, int len);
+
 #endif
 
 

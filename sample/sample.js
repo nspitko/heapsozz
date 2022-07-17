@@ -206,17 +206,40 @@ Main.prototype = $extend(hxd_App.prototype,{
 		new h3d_scene_fwd_DirLight(new h3d_Vector(0.3,-0.4,-0.9),this.s3d);
 		var model = new ozz.Model();
 		var bytes = hxd_Res.get_loader().loadCache("ozz_skin_mesh.ozz",hxd_res_Resource).entry.getBytes();
-		model.loadMeshesImpl(bytes.b,bytes.length);
+		var $window = bytes;
+		var pos = 0;
+		var meshes = [];
+		while(pos < bytes.length) {
+			var mesh = new ozz.Mesh();
+			pos = mesh.loadImpl($window.b,bytes.length);
+			haxe_Log.trace(pos,{ fileName : "sample/Main.hx", lineNumber : 28, className : "Main", methodName : "init"});
+			if(pos == 0) {
+				break;
+			}
+			meshes.push(mesh);
+			$window = bytes.sub(pos,bytes.length - pos);
+		}
+		var tmpArray = new ozz.VectorMeshPtr();
+		var _g = 0;
+		var _g1 = meshes.length;
+		while(_g < _g1) {
+			var i = _g++;
+			tmpArray.push_back(meshes[i]);
+		}
+		model.setMeshes(tmpArray);
+		haxe_Log.trace(tmpArray.size(),{ fileName : "sample/Main.hx", lineNumber : 46, className : "Main", methodName : "init"});
+		haxe_Log.trace(meshes.length,{ fileName : "sample/Main.hx", lineNumber : 47, className : "Main", methodName : "init"});
+		haxe_Log.trace(model.getMeshes().size(),{ fileName : "sample/Main.hx", lineNumber : 48, className : "Main", methodName : "init"});
+		var skeleton = new ozz.Skeleton();
 		var bytes = hxd_Res.get_loader().loadCache("ozz_skin_skeleton.ozz",hxd_res_Resource).entry.getBytes();
-		model.loadSkeletonImpl(bytes.b,bytes.length);
-		var skeleton = model.getSkeleton();
-		haxe_Log.trace("Skeleton has " + skeleton.numJoints + " joints ( " + skeleton.numSoaJoints + " SOA ) ",{ fileName : "sample/Main.hx", lineNumber : 27, className : "Main", methodName : "init"});
+		skeleton.loadImpl(bytes.b,bytes.length);
+		model.setSkeleton(skeleton);
+		haxe_Log.trace("Skeleton has " + skeleton.numJoints + " joints ( " + skeleton.numSoaJoints + " SOA ) ",{ fileName : "sample/Main.hx", lineNumber : 58, className : "Main", methodName : "init"});
 		var ozzmodel = new ozz_OzzModel(model,this.s3d);
 		var bytes = hxd_Res.get_loader().loadCache("ozz_skin_animation.ozz",hxd_res_Resource).entry.getBytes();
 		var nativeAnimation = new ozz.Animation();
-		haxe_Log.trace("bytes len=" + bytes.length,{ fileName : "sample/Main.hx", lineNumber : 36, className : "Main", methodName : "init"});
-		ozz.Animation.load(nativeAnimation,bytes.b,bytes.length);
-		haxe_Log.trace("info: " + nativeAnimation.duration + "s long, " + nativeAnimation.trackCount + " tracks (" + nativeAnimation.soaTrackCount + " SOA)",{ fileName : "sample/Main.hx", lineNumber : 47, className : "Main", methodName : "init"});
+		nativeAnimation.loadImpl(bytes.b,bytes.length);
+		haxe_Log.trace("info: " + nativeAnimation.duration + "s long, " + nativeAnimation.trackCount + " tracks (" + nativeAnimation.soaTrackCount + " SOA)",{ fileName : "sample/Main.hx", lineNumber : 73, className : "Main", methodName : "init"});
 		ozzmodel.ozzAnim = nativeAnimation;
 		new h3d_scene_fwd_DirLight(new h3d_Vector(1,2,-4),this.s3d);
 		new h3d_scene_CameraController(6,this.s3d);
@@ -18524,6 +18547,12 @@ haxe_io_Bytes.prototype = {
 			this.b.set(src.b.subarray(srcpos,srcpos + len),pos);
 		}
 	}
+	,sub: function(pos,len) {
+		if(pos < 0 || len < 0 || pos + len > this.length) {
+			throw haxe_Exception.thrown(haxe_io_Error.OutsideBounds);
+		}
+		return new haxe_io_Bytes(this.b.buffer.slice(pos + this.b.byteOffset,pos + this.b.byteOffset + len));
+	}
 	,getFloat: function(pos) {
 		if(this.data == null) {
 			this.data = new DataView(this.b.buffer,this.b.byteOffset,this.b.byteLength);
@@ -30882,6 +30911,15 @@ js_html__$CanvasElement_CanvasUtil.getContextWebGL = function(canvas,attribs) {
 	}
 	return null;
 };
+var js_lib__$ArrayBuffer_ArrayBufferCompat = function() { };
+$hxClasses["js.lib._ArrayBuffer.ArrayBufferCompat"] = js_lib__$ArrayBuffer_ArrayBufferCompat;
+js_lib__$ArrayBuffer_ArrayBufferCompat.__name__ = "js.lib._ArrayBuffer.ArrayBufferCompat";
+js_lib__$ArrayBuffer_ArrayBufferCompat.sliceImpl = function(begin,end) {
+	var u = new Uint8Array(this,begin,end == null ? null : end - begin);
+	var resultArray = new Uint8Array(u.byteLength);
+	resultArray.set(u);
+	return resultArray.buffer;
+};
 Math.__name__ = "Math";
 var ozz_Init = function() { };
 $hxClasses["ozz.Init"] = ozz_Init;
@@ -30947,15 +30985,7 @@ ozz_OzzModel.__name__ = "ozz.OzzModel";
 ozz_OzzModel.__super__ = h3d_scene_Object;
 ozz_OzzModel.prototype = $extend(h3d_scene_Object.prototype,{
 	initialize: function() {
-		var ozzMeshes = [];
-		var m = this.model.getMeshes();
-		haxe_Log.trace("Found " + m.size() + " meshes",{ fileName : "ozz/OzzModel.hx", lineNumber : 51, className : "ozz.OzzModel", methodName : "initialize"});
-		var _g = 0;
-		var _g1 = m.size();
-		while(_g < _g1) {
-			var i = _g++;
-			ozzMeshes.push(m.get(i));
-		}
+		var ozzMeshes = this.model.getMeshes();
 		var hasNormalMap = false;
 		var ozzShader = new ozz_OzzSkinShader();
 		this.skinShader = ozzShader;
@@ -30968,10 +30998,10 @@ ozz_OzzModel.prototype = $extend(h3d_scene_Object.prototype,{
 		this.materials = [mat];
 		var maxBones = 0;
 		var _g = 0;
-		var _g1 = ozzMeshes.length;
+		var _g1 = ozzMeshes.size();
 		while(_g < _g1) {
 			var i = _g++;
-			maxBones = Math.max(maxBones,ozzMeshes[i].highestJointIndex);
+			maxBones = Math.max(maxBones,ozzMeshes.get(i).highestJointIndex);
 		}
 		var _g = 0;
 		var _g1 = maxBones;
@@ -30998,10 +31028,10 @@ ozz_OzzModel.prototype = $extend(h3d_scene_Object.prototype,{
 			}
 		}
 		var _g = 0;
-		var _g1 = ozzMeshes.length;
+		var _g1 = ozzMeshes.size();
 		while(_g < _g1) {
 			var i = _g++;
-			var mesh = new ozz_OzzMesh(this.model,ozzMeshes[i],i,this.skinShader,this.materials,this);
+			var mesh = new ozz_OzzMesh(this.model,ozzMeshes.get(i),i,this.skinShader,this.materials,this);
 			this.meshes.push(mesh);
 		}
 	}
@@ -31010,7 +31040,7 @@ ozz_OzzModel.prototype = $extend(h3d_scene_Object.prototype,{
 		job.setAnimation(this.ozzAnim);
 		job.ratio = this.animRatio;
 		if(!this.model.runSamplingJob(job)) {
-			haxe_Log.trace("Sampling job failed",{ fileName : "ozz/OzzModel.hx", lineNumber : 126, className : "ozz.OzzModel", methodName : "sync"});
+			haxe_Log.trace("Sampling job failed",{ fileName : "ozz/OzzModel.hx", lineNumber : 123, className : "ozz.OzzModel", methodName : "sync"});
 		}
 		this.animRatio += 0.003;
 		if(this.animRatio > 1) {
@@ -31143,6 +31173,9 @@ haxe_Resource.content = [{ name : "R_ozz_skin_skeleton_ozz", data : "AW96ei1za2V
 haxe_ds_ObjectMap.count = 0;
 haxe_MainLoop.add(hxd_System.updateCursor,-1);
 js_Boot.__toStr = ({ }).toString;
+if(ArrayBuffer.prototype.slice == null) {
+	ArrayBuffer.prototype.slice = js_lib__$ArrayBuffer_ArrayBufferCompat.sliceImpl;
+}
 h2d_Object.tmpPoint = new h2d_col_Point();
 h2d_filter_Filter.defaultUseScreenResolution = false;
 h3d_Buffer.GUID = 0;

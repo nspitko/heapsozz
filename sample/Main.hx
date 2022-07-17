@@ -1,6 +1,7 @@
 import h3d.mat.MaterialSetup;
 import h3d.scene.Mesh;
 import h3d.mat.Texture;
+import ozz.Ozz;
 
 class Main extends hxd.App {
 
@@ -17,12 +18,42 @@ class Main extends hxd.App {
 		var model = new ozz.Ozz.Model();
 
 		var bytes = hxd.Res.ozz_skin_mesh.entry.getBytes();
-		model.loadMeshes( bytes, bytes.length );
+		var window = bytes;
+		var pos = 0;
+		var meshes = [];
+		while( pos < bytes.length )
+		{
+			var mesh = new ozz.Ozz.Mesh();
+			pos = mesh.load(window, bytes.length);
+			trace(pos);
+			if( pos == 0 )
+				break;
+			meshes.push( mesh );
+			window = bytes.sub(pos, bytes.length - pos);
+		}
+
+		#if hl
+		var nativeMeshes = new hl.NativeArray<Mesh>( meshes.length );
+		for( i in 0 ... meshes.length )
+			nativeMeshes[i] = meshes[i];
+
+		model.meshes = nativeMeshes;
+		#else
+		var tmpArray: VectorMeshPtr = js.Syntax.code("new ozz.VectorMeshPtr();");
+		for( i in 0 ... meshes.length )
+			tmpArray.push_back(meshes[i]);
+		model.meshes = tmpArray;
+		trace(tmpArray.length);
+		trace(meshes.length);
+		trace(model.meshes.length);
+		#end
+
+		var skeleton = new Skeleton();
 
 		var bytes = hxd.Res.ozz_skin_skeleton.entry.getBytes();
-		model.loadSkeleton( bytes, bytes.length );
+		skeleton.load( bytes, bytes.length );
 
-		var skeleton = model.getSkeleton();
+		model.skeleton = skeleton;
 
 		trace('Skeleton has ${skeleton.numJoints} joints ( ${skeleton.numSoaJoints} SOA ) ');
 
@@ -32,12 +63,7 @@ class Main extends hxd.App {
 		var bytes = hxd.Res.ozz_skin_animation.entry.getBytes();
 		var nativeAnimation = new ozz.Ozz.Animation();
 
-		#if js
-		trace('bytes len=${bytes.length}');
-		ozz.Ozz.Animation.load( nativeAnimation, @:privateAccess bytes.b, bytes.length );
-		#else
 		nativeAnimation.load( bytes, bytes.length );
-		#end
 
 		#if js
 		//trace('Animation name: ${ nativeAnimation.name().toString() }');

@@ -37,14 +37,21 @@ extern class VectorMeshPtr
 {
 	public function get( idx: Int ) : Mesh;
 	public function size(): Int;
+	public function push_back(m: Mesh): Void;
+
+	public var length(get, never): Int;
+	public inline function get_length(): Int { return size(); }
 }
 
 @:native("ozz.Mesh")
 extern class Mesh
 {
 
+	public function new();
+
 	public inline function getVertexBuffer( stride: Int ) : js.lib.Uint8Array { return getVertexBufferImpl(); };
 	public function getIndices() : js.lib.Uint16Array;
+	public inline function load( data: Bytes, len: Int ): Int { return loadImpl( @:privateAccess data.b, len ); };
 
 	public var triangleIndexCount : Int;
 	public var vertexCount : Int;
@@ -58,6 +65,7 @@ extern class Mesh
 	public var partsCount : Int;
 
 	function getVertexBufferImpl() : js.lib.Uint8Array;
+	function loadImpl( data: js.lib.Uint8Array, len: Int ): Int;
 
 
 
@@ -67,17 +75,29 @@ extern class Mesh
 @:native("ozz.Skeleton")
 extern class Skeleton {
 
+	public function new();
+
+	public inline function load( data: Bytes, len: Int ): Bool { return loadImpl( @:privateAccess data.b, len ); };
+
 	public var numJoints : Int;
 	public var numSoaJoints : Int;
 	public var jointParents : Array<Int>;
+
+	function loadImpl( data: js.lib.Uint8Array, len: Int ): Bool;
 
 }
 
 @:native("ozz.Model")
 extern class Model {
 	public function new(): Void;
-	public inline function loadMeshes( data: Bytes, len: Int ): Bool { return loadMeshesImpl( @:privateAccess data.b, len ); };
-	public inline function loadSkeleton( data: Bytes, len: Int ): Bool { return loadSkeletonImpl( @:privateAccess data.b, len ); };
+
+	public var meshes(get, set): VectorMeshPtr;
+	public var skeleton(never, set): Skeleton;
+
+	public inline function get_meshes( ): VectorMeshPtr { return getMeshes(); }
+	public inline function set_meshes( v: VectorMeshPtr ): VectorMeshPtr { setMeshes(v); return v; }
+	public inline function set_skeleton( v: Skeleton ): Skeleton { setSkeleton(v); return v; }
+
 	public inline function getSkinMatrices( modelIndex: Int, jointCount: Int ) : js.lib.Float32Array { return getSkinMatricesImpl( modelIndex ); };
 
 	public function getSkeleton(): Skeleton;
@@ -91,17 +111,23 @@ extern class Model {
 	function loadMeshesImpl( data: js.lib.Uint8Array, len: Int ): Bool;
 	function loadSkeletonImpl( data: js.lib.Uint8Array, len: Int ): Bool;
 	function getSkinMatricesImpl( modelIndex: Int ) : js.lib.Float32Array;
+	function setMeshes( meshes: VectorMeshPtr ) : Void;
+	function setSkeleton( skeleton: Skeleton ) : Void;
 
 }
 
 @:native("ozz.Animation")
 extern class Animation {
 	public function new(): Void;
-	static public function load( animation: Animation, data: js.lib.Uint8Array, len: Int ): Void;
+	public inline function load( data: Bytes, len: Int ): Bool { return loadImpl( @:privateAccess data.b, len ); };
+
 	public var duration : Float;
 	public var trackCount : Int;
 	public var soaTrackCount : Int;
 	public function name() : String;
+
+	function loadImpl( data: js.lib.Uint8Array, len: Int ): Bool;
+
 }
 
 class Init {
@@ -111,6 +137,8 @@ class Init {
 }
 
 #else
+typedef HLFinalizer = hl.Abstract<"finalizer">; // Used for constructs that require finalizer being called when GCd.
+
 
 @:keep
 @:hlNative("ozz")
@@ -127,47 +155,18 @@ class Init {
 	static function sampling_job_new(samplingJob: SamplingJob): Void { }
 	static function sampling_job_validate(samplingJob: SamplingJob): Bool { return false; }
 	static function sampling_job_setAnimation(samplingJob: SamplingJob, animation: Animation): Void { }
-
-	private var padding1: Float;
-	private var padding2: Float;
-	private var padding3: Float;
-	private var padding4: Float;
-	private var padding5: Float;
-	private var padding6: Float;
-	private var padding7: Float;
-	private var padding8: Float;
-	private var padding9: Float;
-	private var padding10: Float;
-	private var padding11: Float;
-	private var padding12: Float;
-	private var padding13: Float;
-	private var padding14: Float;
-	private var padding15: Float;
-	private var padding16: Float;
-	private var padding17: Float;
-	private var padding18: Float;
-	private var padding19: Float;
-	private var padding20: Float;
-	private var padding21: Float;
-	private var padding22: Float;
-	private var padding23: Float;
-	private var padding24: Float;
-	private var padding25: Float;
-	private var padding26: Float;
-	private var padding27: Float;
-	private var padding28: Float;
-	private var padding29: Float;
-	private var padding30: Float;
+}
 
 
-
+@:struct private class AnimationStruct {
+	@:noCompletion var finalizer: HLFinalizer; // [HL] GC finalizer
 }
 
 @:keep
-@:hlNative("ozz")
-@:struct class Animation
+@:hlNative("ozz") @:forward
+abstract Animation(AnimationStruct) from AnimationStruct to AnimationStruct
 {
-	public function new() {	animation_new(this); }
+	public inline function new() this = animation_init();
 
 	public var duration(get, never): Single;
 	public var trackCount(get, never): Int;
@@ -179,58 +178,12 @@ class Init {
 
 	public inline function load(data: Bytes, len: Int) : Bool { return animation_load(this, data, len); }
 
-	static function animation_new(animation: Animation): Void {}
+	static function animation_init(): AnimationStruct {return null;}
 	static function animation_load(animation: Animation, data: hl.Bytes, len: Int): Bool { return false; }
 	static function animation_get_duration(animation: Animation): Single { return 0; }
 	static function animation_get_track_count(animation: Animation): Int { return 0; }
 	static function animation_get_soa_track_count(animation: Animation): Int { return 0; }
 
-	private var padding1: Float;
-	private var padding2: Float;
-	private var padding3: Float;
-	private var padding4: Float;
-	private var padding5: Float;
-	private var padding6: Float;
-	private var padding7: Float;
-	private var padding8: Float;
-	private var padding9: Float;
-	private var padding10: Float;
-	private var padding11: Float;
-	private var padding12: Float;
-	private var padding13: Float;
-	private var padding14: Float;
-	private var padding15: Float;
-	private var padding16: Float;
-	private var padding17: Float;
-	private var padding18: Float;
-	private var padding19: Float;
-	private var padding20: Float;
-	private var padding21: Float;
-	private var padding22: Float;
-	private var padding23: Float;
-	private var padding24: Float;
-	private var padding25: Float;
-	private var padding26: Float;
-	private var padding27: Float;
-	private var padding28: Float;
-	private var padding29: Float;
-	private var padding30: Float;
-	private var padding31: Float;
-	private var padding32: Float;
-	private var padding33: Float;
-	private var padding34: Float;
-	private var padding35: Float;
-	private var padding36: Float;
-	private var padding37: Float;
-	private var padding38: Float;
-	private var padding39: Float;
-	private var padding40: Float;
-	private var padding41: Float;
-	private var padding42: Float;
-	private var padding43: Float;
-	private var padding44: Float;
-	private var padding45: Float;
-	private var padding46: Float;
 }
 
 @:keep
@@ -239,10 +192,16 @@ class Init {
 {
 }
 
+@:struct private class MeshStruct {
+	@:noCompletion var finalizer: HLFinalizer; // [HL] GC finalizer
+}
+
 @:keep
-@:hlNative("ozz")
-@:struct class Mesh
+@:hlNative("ozz") @:forward
+abstract Mesh(MeshStruct) from MeshStruct to MeshStruct
 {
+	public inline function new() this = mesh_init();
+
 	public var triangleIndexCount(get, never): Int;
 	public var vertexCount(get, never): Int;
 	public var maxInfluencesCount(get, never): Int;
@@ -250,6 +209,8 @@ class Init {
 	public var jointCount(get, never): Int;
 	public var highestJointIndex(get, never): Int;
 	public var partsCount(get, never): Int;
+
+	public inline function load(data: Bytes, len: Int): Int { return mesh_load(this, data, len); }
 
 	public inline function get_triangleIndexCount() { return mesh_triangle_index_count(this); }
 	public inline function get_vertexCount() { return mesh_vertex_count(this); }
@@ -262,6 +223,8 @@ class Init {
 	public inline function getVertexBuffer(stride: Int): Bytes { return mesh_get_vertex_buffer(this).toBytes( vertexCount * stride ); }
 	public inline function getIndices(): Bytes { return mesh_get_indices(this).toBytes(triangleIndexCount * 2); }
 
+	static function mesh_init(): MeshStruct {return null;}
+	static function mesh_load( mesh: Mesh, data: hl.Bytes, len: Int ): Int { return 0; }
 	static function mesh_get_vertex_buffer( mesh: Mesh ): hl.Bytes { return null; }
 	static function mesh_get_indices( mesh: Mesh ): hl.Bytes { return null; }
 	static function mesh_triangle_index_count( mesh: Mesh ): Int { return 0; }
@@ -272,98 +235,58 @@ class Init {
 	static function mesh_highest_joint_index( mesh: Mesh ): Int { return 0; }
 	static function mesh_parts_count( mesh: Mesh ): Int { return 0; }
 
-	private var padding1: Float;
-	private var padding2: Float;
-	private var padding3: Float;
-	private var padding4: Float;
-	private var padding5: Float;
-	private var padding6: Float;
+}
+
+@:struct private class SkeletonStruct {
+	@:noCompletion var finalizer: HLFinalizer; // [HL] GC finalizer
 }
 
 @:keep
-@:hlNative("ozz")
-@:struct class Skeleton
+@:hlNative("ozz") @:forward
+abstract Skeleton(SkeletonStruct) from SkeletonStruct to SkeletonStruct
 {
+	public inline function new() this = skeleton_init();
+
 	public var numJoints(get, never): Int;
 	public var numSoaJoints(get, never): Int;
+
+	public inline function load(data: Bytes, len: Int): Bool { return skeleton_load(this, data, len); }
 
 	public inline function get_numJoints() { return skeleton_num_joints(this); }
 	public inline function get_numSoaJoints() { return skeleton_num_soa_joints(this); }
 
+	static function skeleton_init(): SkeletonStruct {return null;}
 	static function skeleton_num_joints(skeleton: Skeleton): Int { return 0; }
 	static function skeleton_num_soa_joints(skeleton: Skeleton): Int { return 0; }
+	static function skeleton_load( skeleton: Skeleton, data: hl.Bytes, len: Int ): Bool { return false; }
 
-	// Never allocated from Haxe, does not need padding
+}
+
+@:struct private class ModelStruct {
+
+	@:noCompletion var finalizer: HLFinalizer; // [HL] GC finalizer
+
+	public var meshes: hl.NativeArray<Mesh>;
+	public var skeleton: Skeleton;
+
+	// @todo delete
+	public var spacer1: Int;
+
 }
 
 @:keep
-@:hlNative("ozz")
-@:struct class Model
+@:hlNative("ozz", "model_") @:forward
+abstract Model(ModelStruct) from ModelStruct to ModelStruct
 {
-	public function new() { model_new(this); }
+	public inline function new() this = init();
 
-	public inline function loadSkeleton(data: Bytes, len: Int) : Bool { return model_load_skeleton(this, data, len); }
-	public inline function loadMeshes(data: Bytes, len: Int) : Bool { return model_load_meshes(this, data, len); }
-	public inline function getSkeleton() : Skeleton { return model_get_skeleton(this); }
-	public inline function getMeshes() : hl.NativeArray<Mesh> { return model_get_meshes(this); }
-	public inline function getSkinMatrices( meshIndex: Int, numMatrices: Int ) : Bytes { return model_get_skin_matrices(this, meshIndex).toBytes( numMatrices * 4 * 4 ); }
-	public inline function runSamplingJob( job: SamplingJob ) : Bool { return model_run_sampling_job(this, job); }
 
-	static function model_new(model: Model): Void {}
-	static function model_load_skeleton(model: Model, data: hl.Bytes, len: Int): Bool { return false; }
-	static function model_load_meshes(model: Model, data: hl.Bytes, len: Int): Bool { return false; }
-	static function model_get_skeleton(model: Model): Skeleton { return null; }
-	static function model_get_meshes(model: Model): hl.NativeArray<Mesh> { return null; }
-	static function model_get_skin_matrices(model: Model, meshIndex: Int): hl.Bytes { return null; }
-	static function model_run_sampling_job(model: Model, job: SamplingJob): Bool { return false; }
+	public inline function getSkinMatrices( meshIndex: Int, numMatrices: Int ) : Bytes { return get_skin_matrices(this, meshIndex).toBytes( numMatrices * 4 * 4 ); }
+	public inline function runSamplingJob( job: SamplingJob ) : Bool { return run_sampling_job(this, job); }
 
-	private var padding1: Float;
-	private var padding2: Float;
-	private var padding3: Float;
-	private var padding4: Float;
-	private var padding5: Float;
-	private var padding6: Float;
-	private var padding7: Float;
-	private var padding8: Float;
-	private var padding9: Float;
-	private var padding10: Float;
-	private var padding11: Float;
-	private var padding12: Float;
-	private var padding13: Float;
-	private var padding14: Float;
-	private var padding15: Float;
-	private var padding16: Float;
-	private var padding17: Float;
-	private var padding18: Float;
-	private var padding19: Float;
-	private var padding20: Float;
-	private var padding21: Float;
-	private var padding22: Float;
-	private var padding23: Float;
-	private var padding24: Float;
-	private var padding25: Float;
-	private var padding26: Float;
-	private var padding27: Float;
-	private var padding28: Float;
-	private var padding29: Float;
-	private var padding30: Float;
-	private var padding31: Float;
-	private var padding32: Float;
-	private var padding33: Float;
-	private var padding34: Float;
-	private var padding35: Float;
-	private var padding36: Float;
-	private var padding37: Float;
-	private var padding38: Float;
-	private var padding39: Float;
-	private var padding40: Float;
-	private var padding41: Float;
-	private var padding42: Float;
-	private var padding43: Float;
-	private var padding44: Float;
-	private var padding45: Float;
-	private var padding46: Float;
-
+	static function init(): ModelStruct {return null;}
+	static function get_skin_matrices(model: Model, meshIndex: Int): hl.Bytes { return null; }
+	static function run_sampling_job(model: Model, job: SamplingJob): Bool { return false; }
 }
 
 class Init

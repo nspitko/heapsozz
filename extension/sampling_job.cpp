@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "animation.h"
 
 #include "ozz/animation/runtime/sampling_job.h"
 #include "ozz/animation/runtime/animation.h"
@@ -38,9 +39,9 @@ HL_PRIM bool HL_NAME(sampling_job_validate)(ozz::animation::SamplingJob* job)
 	return job->Validate();
 }
 
-HL_PRIM void HL_NAME(sampling_job_set_animation)(ozz::animation::SamplingJob* job, ozz::animation::Animation* animation)
+HL_PRIM void HL_NAME(sampling_job_set_animation)(ozz::animation::SamplingJob* job, hl_animation* a)
 {
-	job->animation = animation;
+	job->animation = &a->animation;
 }
 
 DEFINE_PRIM(_VOID, sampling_job_new, _STRUCT);

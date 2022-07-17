@@ -95,7 +95,7 @@ using namespace emscripten;
 EMSCRIPTEN_BINDINGS(ozzAnimation) {
 	class_<ozz::animation::Animation>("Animation")
 		.constructor<>()
-		.class_function("load", &animationLoad)
+		.function("loadImpl", &animationLoad)
 		.property("duration", &ozz::animation::Animation::duration)
 		.property("trackCount", &ozz::animation::Animation::num_tracks)
 		.property("soaTrackCount", &ozz::animation::Animation::num_soa_tracks)
@@ -104,33 +104,41 @@ EMSCRIPTEN_BINDINGS(ozzAnimation) {
 }
 
 #else
-HL_PRIM void HL_NAME(animation_new)(ozz::animation::Animation* animation)
+
+static void animation_finalize(hl_animation *a)
 {
-	if (animation != nullptr) new (animation)ozz::animation::Animation();
+	a->animation.~Animation();
 }
 
-
-HL_PRIM bool HL_NAME(animation_load)(ozz::animation::Animation* animation, vbyte* data, int len)
+HL_PRIM hl_animation* HL_NAME(animation_init)()
 {
-	return animationLoad(*animation, data, len);
+	hl_animation* hl_mem = (hl_animation*)hl_gc_alloc_finalizer(sizeof(hl_animation));
+	hl_mem->finalize = animation_finalize;
+	new (&hl_mem->animation)ozz::animation::Animation();
+	return hl_mem;
 }
 
-HL_PRIM float HL_NAME(animation_get_duration)(ozz::animation::Animation* animation)
+HL_PRIM bool HL_NAME(animation_load)(hl_animation* a, vbyte* data, int len)
 {
-	return animation->duration();
+	return animationLoad(a->animation, data, len);
 }
 
-HL_PRIM int HL_NAME(animation_get_track_count)(ozz::animation::Animation* animation)
+HL_PRIM float HL_NAME(animation_get_duration)(hl_animation* a)
 {
-	return animation->num_tracks();
+	return a->animation.duration();
 }
 
-HL_PRIM int HL_NAME(animation_get_soa_track_count)(ozz::animation::Animation* animation)
+HL_PRIM int HL_NAME(animation_get_track_count)(hl_animation* a)
 {
-	return animation->num_soa_tracks();
+	return a->animation.num_tracks();
 }
 
-DEFINE_PRIM(_VOID, animation_new, _STRUCT);
+HL_PRIM int HL_NAME(animation_get_soa_track_count)(hl_animation* a)
+{
+	return a->animation.num_soa_tracks();
+}
+
+DEFINE_PRIM(_STRUCT, animation_init, _NO_ARG );
 DEFINE_PRIM(_BOOL, animation_load, _STRUCT _BYTES _I32);
 DEFINE_PRIM(_F32, animation_get_duration, _STRUCT );
 DEFINE_PRIM(_I32, animation_get_track_count, _STRUCT );

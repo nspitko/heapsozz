@@ -53,6 +53,11 @@ struct Part {
 
 struct Mesh {
 
+	Mesh()
+	{
+
+	}
+
 	~Mesh()
 	{
 		if( vertexBuffer != nullptr )
@@ -122,8 +127,6 @@ struct Mesh {
 	typedef ozz::vector<ozz::math::Float4x4> InversBindPoses;
 	InversBindPoses inverse_bind_poses;
 
-	bool load(char* data, int len);
-
 	const int parts_count() {  return static_cast<int>(parts.size()); }
 	const int joint_remap_count() {  return static_cast<int>(joint_remaps.size()); }
 
@@ -135,9 +138,16 @@ struct Mesh {
 	uint16_t *indexBuffer = nullptr;
 
 #ifndef EMSCRIPTEN
+	// Loads a mesh from a given buffer.
+	// 0 on failure, else the memory buffer position.
+	int load( char *data, int len );
+
 	char* get_vertex_buffer();
 	char* get_indices();
 #else
+	int load( std::string data, int len );
+
+
 	emscripten::val get_vertex_buffer();
 	emscripten::val get_indices();
 #endif
@@ -171,6 +181,14 @@ struct Extern<Mesh> {
 };
 }
 }
+
+#ifndef EMSCRIPTEN
+typedef struct _hl_mesh hl_mesh;
+struct _hl_mesh {
+	void(*finalize)(hl_mesh*);
+	Mesh mesh;
+};
+#endif
 
 
 // functions

@@ -29,39 +29,51 @@ struct Model
 {
 	Model( ) : context(), meshes(), localTransforms(), modelMatrices(), skinningMatrices()
 	{
+		#ifndef EMSCRIPTEN
+		hl_add_root( &skeleton );
+		hl_add_root( &meshes );
+		#endif
 	}
 
 	~Model()
 	{
+		#ifndef EMSCRIPTEN
+		hl_remove_root( &skeleton );
+		hl_remove_root( &meshes );
+		#endif
+
 		if( skinningMatrixBuffer != nullptr )
 			free( skinningMatrixBuffer );
+
+		printf("Model object has been finalized.\n");
 	}
 
 
 	bool runSamplingJob( ozz::animation::SamplingJob *job );
 
-	float *skinningMatrixBuffer = nullptr;
-
 	#ifdef EMSCRIPTEN
-	bool loadMeshes(std::string data, int len);
-	bool loadSkeleton(std::string data, int len);
-
 	emscripten::val getSkinMatrices( int meshIndex );
-	std::vector<Mesh *> getMeshes();
-	#else
-	bool loadMeshes(vbyte *data, int len);
-	bool loadSkeleton(vbyte *data, int len);
 
-	varray* getMeshes();
+	//
+	std::vector<Mesh *> meshes;
+	ozz::animation::Skeleton* skeleton;
+
+	#else
 	vbyte* getSkinMatrices( int meshIndex );
+
+	//
+	varray* meshes;
+	hl_skeleton* skeleton;
+
 	#endif
 
-	ozz::animation::Skeleton* getSkeleton() { return &skeleton; }
 
 
-	// Data
-	ozz::vector<Mesh> meshes;
-	ozz::animation::Skeleton skeleton;
+	int spacer = 10; // Debugging: Make sure we're aligned properly.
+
+	// BELOW HERE: data structures which are not mapped to HL.
+
+	float *skinningMatrixBuffer = nullptr;
 
 	// Buffer of local model space matrices.
 	ozz::vector<ozz::math::SoaTransform> localTransforms;

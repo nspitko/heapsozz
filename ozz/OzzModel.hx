@@ -42,18 +42,7 @@ class OzzModel extends h3d.scene.Object {
 	function initialize()
 	{
 
-
-
-		#if js
-		var ozzMeshes = [];
-
-		var m =model.getMeshes();
-		trace('Found ${m.size()} meshes');
-		for( i in 0 ... m.size() )
-			ozzMeshes.push(m.get(i));
-		#else
-		var ozzMeshes = model.getMeshes();
-		#end
+		var ozzMeshes = model.meshes;
 
 
 
@@ -78,7 +67,11 @@ class OzzModel extends h3d.scene.Object {
 		var maxBones: Int = 0;// model.getSkeleton().highestJointIndex();
 		for( i in 0 ... ozzMeshes.length )
 		{
+			#if js
+			maxBones = cast Math.max( maxBones, ozzMeshes.get(i).highestJointIndex );
+			#else
 			maxBones = cast Math.max( maxBones, ozzMeshes[i].highestJointIndex );
+			#end
 		}
 
 		for( i in 0 ... maxBones )
@@ -107,7 +100,11 @@ class OzzModel extends h3d.scene.Object {
 
 		for( i in 0 ... ozzMeshes.length )
 		{
+			#if js
+			var mesh = new OzzMesh( model, ozzMeshes.get(i), i, skinShader, materials, this );
+			#else
 			var mesh = new OzzMesh( model, ozzMeshes[i], i, skinShader, materials, this );
+			#end
 			meshes.push( mesh );
 
 		}
@@ -122,7 +119,7 @@ class OzzModel extends h3d.scene.Object {
 		job.setAnimation( ozzAnim );
 		job.ratio = animRatio;
 
-		if( !model.runSamplingJob( job ) )
+	if( !model.runSamplingJob( job ) )
 			trace("Sampling job failed");
 
 		//skinShader.fourBonesByVertex = true; // @todo

@@ -14,15 +14,60 @@
 
 bool Model::runSamplingJob( ozz::animation::SamplingJob *job )
 {
+
+	// Verify we have sized our datastructures enough to sample this job.
+	#if EMSCRIPTEN
+	const int num_soa_joints = skeleton->num_soa_joints();
+    const int num_joints = skeleton->num_joints();
+	#else
+	const int num_soa_joints = skeleton->skeleton.num_soa_joints();
+    const int num_joints = skeleton->skeleton.num_joints();
+	#endif
+
+	assert(num_joints > 0);
+
+	localTransforms.resize(num_soa_joints);
+    modelMatrices.resize(num_joints);
+
+	// Allocates a context that matches animation requirements.
+	// @todo: We shouldn't do this every frame! Only when the skeleton changes.
+	context.Resize(num_joints);
+
 	job->context = &context;
-	job->output = ozz::make_span( localTransforms );
+	job->output = ozz::make_span(localTransforms);
+
+
+
+	// Ensure we have enough skin matrices
+	size_t num_skinning_matrices = 0;
+	#if EMSCRIPTEN
+	for (int i=0; i<meshes.size(); i++)
+	{
+		Mesh* m = meshes[i];
+    	num_skinning_matrices = ozz::math::Max(num_skinning_matrices, m->joint_remaps.size());
+    }
+	#else
+    for (int i=0; i<meshes->size; i++)
+	{
+		hl_mesh* m = hl_aptr(meshes,hl_mesh*)[i];
+    	num_skinning_matrices = ozz::math::Max(num_skinning_matrices, m->mesh.joint_remaps.size());
+    }
+	#endif
+
+    // Allocates skinning matrices.
+    skinningMatrices.resize(num_skinning_matrices);
+
 
 	if( !job->Run() )
 		return false;
 
 	// Converts from local space to model space matrices.
     ozz::animation::LocalToModelJob ltm_job;
-    ltm_job.skeleton = &skeleton;
+	#if EMSCRIPTEN
+	ltm_job.skeleton = skeleton;
+	#else
+    ltm_job.skeleton = &skeleton->skeleton;
+	#endif
     ltm_job.input = make_span(localTransforms);
     ltm_job.output = make_span(modelMatrices);
     if (!ltm_job.Run()) {
@@ -33,86 +78,6 @@ bool Model::runSamplingJob( ozz::animation::SamplingJob *job )
 
 }
 
-// @todo: Currently we don't share skeletons/meshes between instances. This is pretty bad!
-#ifdef EMSCRIPTEN
-bool Model::loadMeshes(std::string data, int len)
-#else
-bool Model::loadMeshes(vbyte *data, int len)
-#endif
-{
-	ozz::io::MemoryStream ms;
-	#ifdef EMSCRIPTEN
-	ms.Write( data.data(), len );
-	#else
-	ms.Write( data, len );
-	#endif
-	ms.Seek(0,ms.kSet);
-
-	ozz::io::IArchive archive(&ms);
-
-
-	if (!archive.TestTag<Mesh>())
-	{
-		printf("Failed to load mesh instance from file\n");
-		return false;
-	}
-
-	while (archive.TestTag<Mesh>())
-	{
-		meshes.resize(meshes.size() + 1);
-		archive >> meshes.back();
-	}
-
-	// Ensure we have enough skin matrices
-	size_t num_skinning_matrices = 0;
-    for (const Mesh& mesh : meshes) {
-    	num_skinning_matrices = ozz::math::Max(num_skinning_matrices, mesh.joint_remaps.size());
-    }
-
-    // Allocates skinning matrices.
-    skinningMatrices.resize(num_skinning_matrices);
-
-
-	return true;
-}
-
-
-#ifdef EMSCRIPTEN
-bool Model::loadSkeleton(std::string data, int len)
-#else
-bool Model::loadSkeleton(vbyte *data, int len)
-#endif
-{
-	ozz::io::MemoryStream ms;
-	#ifdef EMSCRIPTEN
-	ms.Write( data.data(), len );
-	#else
-	ms.Write( data, len );
-	#endif
-
-	ms.Seek(0,ms.kSet);
-
-	ozz::io::IArchive archive(&ms);
-
-
-	if (!archive.TestTag<ozz::animation::Skeleton>())
-	{
-		printf("Failed to load skeleton instance from file\n");
-		return false;
-	}
-
-	archive >> skeleton;
-
-	const int num_soa_joints = skeleton.num_soa_joints();
-    localTransforms.resize(num_soa_joints);
-    const int num_joints = skeleton.num_joints();
-    modelMatrices.resize(num_joints);
-
-    // Allocates a context that matches animation requirements.
-    context.Resize(num_joints);
-
-	return true;
-}
 
 #ifdef EMSCRIPTEN
 emscripten::val Model::getSkinMatrices( int meshIndex )
@@ -121,7 +86,11 @@ vbyte* Model::getSkinMatrices( int meshIndex )
 #endif
 {
 	// First, apply skinning matrices (use joint remaps and multiply by inverse bind pose)
-	Mesh *mesh = &meshes[meshIndex];
+#if EMSCRIPTEN
+	Mesh* mesh = meshes[meshIndex];
+#else
+	Mesh *mesh = &hl_aptr(meshes,hl_mesh*)[meshIndex]->mesh;
+#endif
 
 	int numSkinJoints = mesh->num_joints();
 
@@ -177,34 +146,29 @@ vbyte* Model::getSkinMatrices( int meshIndex )
 #endif
 }
 
-#ifndef EMSCRIPTEN
-varray* Model::getMeshes()
-{
-
-	varray *arr = hl_alloc_array(&hlt_abstract, (int)meshes.size());
-	for( size_t i=0; i<meshes.size();i++)
-	{
-		hl_aptr(arr,Mesh*)[i] = &meshes.at(i);
-	}
-
-	return arr;
-}
-#else
-std::vector<Mesh *> Model::getMeshes()
-{
-	std::vector<Mesh *> vec;
-	for( int i=0; i<meshes.size(); i++)
-		vec.push_back( &meshes[i]);
-
-
-	return vec;
-}
-
-#endif
 
 #ifdef EMSCRIPTEN
 
 using namespace emscripten;
+
+const static ozz::animation::Skeleton* model_get_skeleton(const Model &ms2) {
+    // Return a MyStruct by-val to be converted into a value object.
+    return ms2.skeleton;
+}
+
+static void model_set_skeleton(Model &model, ozz::animation::Skeleton *skeleton) {
+    model.skeleton = skeleton;
+}
+
+
+static void model_set_meshes(Model &model,  std::vector<Mesh *> meshes) {
+    model.meshes = meshes;
+}
+
+const static std::vector<Mesh *> model_get_meshes(Model &model) {
+    return model.meshes;
+}
+
 
 
 EMSCRIPTEN_BINDINGS(ozzModel) {
@@ -214,14 +178,15 @@ EMSCRIPTEN_BINDINGS(ozzModel) {
 	class_<Model>("Model")
 		.constructor<>()
 		//
-		.function("loadMeshesImpl", &Model::loadMeshes)
-		.function("loadSkeletonImpl", &Model::loadSkeleton)
-		.function("getSkeleton", &Model::getSkeleton, allow_raw_pointers())
-		.function("getMeshes", &Model::getMeshes, allow_raw_pointers())
+
 		.function("getSkinMatricesImpl", &Model::getSkinMatrices)
 		.function("runSamplingJob", &Model::runSamplingJob, allow_raw_pointers())
+		.function("setSkeleton", &model_set_skeleton, allow_raw_pointers())
+		.function("setMeshes", &model_set_meshes, allow_raw_pointers())
+		.function("getMeshes", &model_get_meshes, allow_raw_pointers())
 		//
-		//.property("meshes")
+		//.property("meshes" &Model::meshes)
+		//.property("skeleton", &model_get_skeleton, &model_set_skeleton)
 		//.field("meshes", &Model::meshes)
 		//.field("skeleton", &Model::skeleton, allow_raw_pointers())
 		//.field("localTransforms", &Model::localTransforms)
@@ -234,40 +199,39 @@ EMSCRIPTEN_BINDINGS(ozzModel) {
 }
 #else
 
-HL_PRIM void HL_NAME(model_new)(Model* model)
+typedef struct _hl_model hl_model;
+struct _hl_model {
+	void(*finalize)(hl_model*);
+	Model model;
+};
+
+static void model_finalize(hl_model *m)
 {
-	if (model != nullptr) new (model)Model(); else printf("Failed to init struct; ptr is null\n");
+	m->model.~Model();
 }
 
-HL_PRIM bool HL_NAME(model_load_meshes)(Model* model, vbyte* data, int length) {
-	return model->loadMeshes(data, length);
+/**
+ * We use this to allocate the object with a finalizer; since Haxe doesn't have native
+ * destructors, this is the only way to currently have this kind of behavior.
+ */
+HL_PRIM hl_model* HL_NAME(model_init)()
+{
+	hl_model* hl_mem = (hl_model*)hl_gc_alloc_finalizer(sizeof(hl_model));
+	hl_mem->finalize = model_finalize;
+	new (&hl_mem->model)Model();
+	return hl_mem;
 }
 
-HL_PRIM bool HL_NAME(model_load_skeleton)(Model* model, vbyte* data, int length) {
-	return model->loadSkeleton(data, length);
+HL_PRIM vbyte* HL_NAME(model_get_skin_matrices)(hl_model* m, int meshIndex) {
+	return m->model.getSkinMatrices( meshIndex );
 }
 
-HL_PRIM ozz::animation::Skeleton* HL_NAME(model_get_skeleton)(Model* model ) {
-	return model->getSkeleton();
+HL_PRIM bool HL_NAME(model_run_sampling_job)(hl_model* m, ozz::animation::SamplingJob* job) {
+	return m->model.runSamplingJob( job );
 }
 
-HL_PRIM varray* HL_NAME(model_get_meshes)(Model* model ) {
-	return model->getMeshes();
-}
 
-HL_PRIM vbyte* HL_NAME(model_get_skin_matrices)(Model* model, int meshIndex) {
-	return model->getSkinMatrices( meshIndex );
-}
-
-HL_PRIM bool HL_NAME(model_run_sampling_job)(Model* model, ozz::animation::SamplingJob* job) {
-	return model->runSamplingJob( job );
-}
-
-DEFINE_PRIM(_VOID, model_new, _STRUCT);
-DEFINE_PRIM(_BOOL, model_load_meshes, _STRUCT _BYTES _I32 );
-DEFINE_PRIM(_BOOL, model_load_skeleton, _STRUCT _BYTES _I32);
-DEFINE_PRIM(_STRUCT, model_get_skeleton, _STRUCT );
-DEFINE_PRIM(_ARR, model_get_meshes, _STRUCT );
+DEFINE_PRIM(_STRUCT, model_init, _NO_ARG);
 DEFINE_PRIM(_BYTES, model_get_skin_matrices, _STRUCT _I32 );
 DEFINE_PRIM(_BOOL, model_run_sampling_job, _STRUCT _STRUCT );
 
