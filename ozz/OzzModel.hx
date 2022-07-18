@@ -1,4 +1,5 @@
 package ozz;
+import ozz.Ozz.Animation;
 import h3d.Matrix;
 import h3d.scene.RenderContext;
 import h3d.mat.Material;
@@ -37,6 +38,13 @@ class OzzModel extends h3d.scene.Object {
 
 		initialize();
 
+	}
+
+	// Simple animation playback.
+	public function playOzzAnimation( animation: Animation )
+	{
+		// @todo: Support multiple samplers and animation.
+		ozzAnim = animation;
 	}
 
 	function initialize()
